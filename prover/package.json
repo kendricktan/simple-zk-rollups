@@ -1,0 +1,27 @@
+{
+  "name": "prover",
+  "version": "1.0.0",
+  "description": "Proving circuits for simple-zk-rollups",
+  "license": "MIT",
+  "author": "Kendrick Tan <kendricktan0814@gmail.com>",
+  "dependencies": {
+    "circom": "^0.0.35",
+    "circomlib": "^0.0.20",
+    "snarkjs": "^0.1.20",
+    "websnark": "^0.0.5"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.9.0",
+    "@types/node": "^13.1.8",
+    "jest": "^24.9.0",
+    "ts-jest": "^24.3.0",
+    "tsconfig-paths": "^3.9.0",
+    "tsconfig-paths-jest": "^0.0.1",
+    "tsutils": "^3.17.1",
+    "typescript": "^3.7.5"
+  },
+  "scripts": {
+    "test": "jest --coverage --no-cache",
+    "test:watch": "jest --watch"
+  }
+}
