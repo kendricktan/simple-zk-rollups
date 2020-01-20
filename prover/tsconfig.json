@@ -19,7 +19,5 @@
     "strictNullChecks": false,
     "baseUrl": "."
   },
-  "include": [
-    "circuits/__tests__/**/*"
-  ]
+  "include": ["circuits/__tests__/**/*"]
 }

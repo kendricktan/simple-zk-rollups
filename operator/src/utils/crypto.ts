@@ -1,5 +1,3 @@
-/* tslint:disable:ts(2363) */
-
 import * as assert from "assert";
 import * as crypto from "crypto";
 
