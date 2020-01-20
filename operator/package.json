@@ -14,7 +14,7 @@
     "eslint-config-prettier": "~6.9.0",
     "eslint-plugin-jest": "~23.2.0",
     "jest": "~24.9.0",
-    "prettier": "~1.19.1",
+    "prettier": "1.19.1",
     "rimraf": "~3.0.0",
     "ts-jest": "~24.2.0",
     "tslint": "^5.20.1",
@@ -34,12 +34,12 @@
   "author": "Kendrick Tan <kendricktan0814@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "circom": "^0.0.35",
-    "circomlib": "^0.0.20",
+    "circom": "0.0.35",
+    "circomlib": "0.0.20",
     "ganache-cli": "^6.8.2",
-    "snarkjs": "^0.1.20",
+    "snarkjs": "0.1.20",
     "truffle": "^5.1.9",
     "tslib": "~1.10.0",
-    "websnark": "^0.0.5"
+    "websnark": "0.0.5"
   }
 }

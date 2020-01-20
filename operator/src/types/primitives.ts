@@ -1,4 +1,6 @@
-export interface snarkBigInt extends BigInt {
+// The bigInt from snarkjs has some extensions to it
+// i.e. leInt2Buff and beInt2Buff
+export interface SnarkBigInt extends BigInt {
     isOdd: Function,
     isNegative: Function,
     and: Function,
@@ -32,10 +34,16 @@ export interface snarkBigInt extends BigInt {
     beInt2Buff: Function
 }
 
-export type PrivateKey = snarkBigInt
-export type Publickey = [snarkBigInt, snarkBigInt]
+export type PrivateKey = SnarkBigInt
+export type Publickey = [SnarkBigInt, SnarkBigInt]
+
+export interface EncryptedMessage {
+  iv: SnarkBigInt,
+  msg: SnarkBigInt[]
+}
+export type Message = SnarkBigInt[]
 
 export interface Signature {
-  R8: [snarkBigInt, snarkBigInt],
-  S: snarkBigInt
+  R8: [SnarkBigInt, SnarkBigInt],
+  S: SnarkBigInt
 }
