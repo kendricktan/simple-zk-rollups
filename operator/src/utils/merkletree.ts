@@ -4,6 +4,11 @@ import { multiHash } from "./crypto";
 import { SnarkBigInt } from "../types/primitives";
 import { copyObject, stringifyBigInts } from "./helpers";
 
+export interface MerkleTreePath {
+  pathElements: SnarkBigInt[];
+  pathIndexes: number[];
+}
+
 export class MerkleTree {
   // Merkle Tree root
   root: SnarkBigInt;
@@ -104,15 +109,15 @@ export class MerkleTree {
   }
 
   update(leafIndex: number, leaf: SnarkBigInt, rawValue: any = {}): MerkleTree {
-    const copyA = copyObject(this);
+    const copyA: MerkleTree = copyObject(this);
 
     if (leafIndex >= copyA.nextLeafIndex) {
       throw new Error("Can't update leafIndex which hasn't been inserted yet!");
     }
 
-    const paths = copyA.getUpdatePath(leafIndex);
+    const { pathElements } = copyA.getUpdatePath(leafIndex);
 
-    copyA.update_(leafIndex, leaf, rawValue, paths[0]);
+    copyA.update_(leafIndex, leaf, rawValue, pathElements);
 
     return copyA;
   }
@@ -122,7 +127,7 @@ export class MerkleTree {
     leafIndex: number,
     leaf: SnarkBigInt,
     rawValue: any,
-    path: SnarkBigInt[]
+    pathElements: SnarkBigInt[]
   ) {
     if (leafIndex >= this.nextLeafIndex) {
       throw new Error("Can't update leafIndex which hasn't been inserted yet!");
@@ -136,9 +141,9 @@ export class MerkleTree {
     for (let i = 0; i < this.depth; i++) {
       if (curIdx % 2 === 0) {
         left = currentLevelHash;
-        right = path[i];
+        right = pathElements[i];
       } else {
-        left = path[i];
+        left = pathElements[i];
         right = currentLevelHash;
       }
 
@@ -156,12 +161,12 @@ export class MerkleTree {
     for (let i = 0; i < this.depth; i++) {
       if (curIdx % 2 === 0) {
         left = currentLevelHash;
-        right = path[i];
+        right = pathElements[i];
 
         this.filledPaths[i][curIdx] = left;
         this.filledPaths[i][curIdx + 1] = right;
       } else {
-        left = path[i];
+        left = pathElements[i];
         right = currentLevelHash;
 
         this.filledPaths[i][curIdx - 1] = left;
@@ -216,27 +221,30 @@ export class MerkleTree {
    *  Used for quick verification on updates.
    *  Runs in O(log(N)), where N is the number of leaves
    */
-  getUpdatePath(leafIndex: number): [SnarkBigInt[], number[]] {
+  getUpdatePath(leafIndex: number): MerkleTreePath {
     if (leafIndex >= this.nextLeafIndex) {
       throw new Error("Path not constructed yet, leafIndex >= nextIndex");
     }
 
     let curIdx = leafIndex;
-    const path = [];
-    const pathIndex = [];
+    const pathElements = [];
+    const pathIndexes = [];
 
     for (let i = 0; i < this.depth; i++) {
       if (curIdx % 2 === 0) {
-        path.push(this.filledPaths[i][curIdx + 1]);
-        pathIndex.push(0);
+        pathElements.push(this.filledPaths[i][curIdx + 1]);
+        pathIndexes.push(0);
       } else {
-        path.push(this.filledPaths[i][curIdx - 1]);
-        pathIndex.push(1);
+        pathElements.push(this.filledPaths[i][curIdx - 1]);
+        pathIndexes.push(1);
       }
       curIdx = parseInt((curIdx / 2).toString());
     }
 
-    return [path, pathIndex];
+    return {
+      pathElements,
+      pathIndexes
+    };
   }
 }
 

@@ -7,6 +7,7 @@
   "dependencies": {
     "circom": "^0.0.35",
     "circomlib": "^0.0.20",
+    "ethers": "^4.0.43",
     "snarkjs": "^0.1.20",
     "websnark": "^0.0.5"
   },

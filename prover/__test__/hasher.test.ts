@@ -28,7 +28,7 @@ describe("hasher.circom", () => {
 
   it("HashLeftRight()", async () => {
     const circuitDef = await compiler(
-      path.join(__dirname, "circuits", "hashleftright_test.circom")
+      path.join(__dirname, "circuits", "hasher_hashleftright_test.circom")
     );
     const circuit = new Circuit(circuitDef);
 
