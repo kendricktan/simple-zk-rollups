@@ -1,9 +1,11 @@
-include "./merkletree.circom"
-include "./eddsa.circom"
-include "./hasher.circom"
+include "./merkletree.circom";
+include "./eddsa.circom";
+include "./hasher.circom";
 
 include "../node_modules/circomlib/circuits/bitify.circom";
 include "../node_modules/circomlib/circuits/mimcsponge.circom";
+include "../node_modules/circomlib/circuits/mux1.circom";
+include "../node_modules/circomlib/circuits/comparators.circom";
 
 template ProcessTx(depth) {
   // Processes a single transaction
@@ -13,8 +15,8 @@ template ProcessTx(depth) {
   signal input balanceTreeRoot;
 
   // Leaf data length in the balance tree is 3
-  // [public_key_x, public_key_y, balance]
-  var BALANCE_TREE_LEAF_DATA_LENGTH = 3;
+  // [public_key_x, public_key_y, balance, nonce]
+  var BALANCE_TREE_LEAF_DATA_LENGTH = 4;
 
   /*
     Anatomy of a transaction
@@ -45,6 +47,7 @@ template ProcessTx(depth) {
   // Transaction sender data
   signal input txSenderPublicKey[2];
   signal input txSenderBalance;
+  signal input txSenderNonce;
   signal input txSenderPathElements[depth];
   component txSenderPathIndexes = Num2Bits(depth);
   txSenderPathIndexes.in <== txData[TX_DATA_FROM_IDX];
@@ -52,6 +55,7 @@ template ProcessTx(depth) {
   // Transaction recipient data
   signal input txRecipientPublicKey[2];
   signal input txRecipientBalance;
+  signal input txRecipientNonce;
   signal input txRecipientPathElements[depth];
   component txRecipientPathIndexes = Num2Bits(depth);
   txRecipientPathIndexes.in <== txData[TX_DATA_TO_IDX];
@@ -65,7 +69,7 @@ template ProcessTx(depth) {
   component intermediateBalanceTreePathIndexes = Num2Bits(depth);
   intermediateBalanceTreePathIndexes.in <== txData[TX_DATA_TO_IDX];
 
-  // Step 1. Make sure that the signature is valid
+  // Step 1.1 Make sure that the signature is valid
   component validTxSignature = VerifyEdDSASignature(TX_DATA_WITHOUT_SIG_LENGTH);
   validTxSignature.fromX <== txSenderPublicKey[0];
   validTxSignature.fromY <== txSenderPublicKey[1];
@@ -77,10 +81,18 @@ template ProcessTx(depth) {
   }
   validTxSignature.valid === 1;
 
-  // TODO: Check from index is valid
-  // TODO: Check to index is valid
-  // TODO: Check value is not negative
-  // TODO: Check nonce is prev nonce + 1
+  // Step 1.2 Make sure that the nonce, send value and fee are valid
+  txData[TX_DATA_NONCE_IDX] === txSenderNonce + 1;
+
+  component validAmount = GreaterThan(256);
+  validAmount.in[0] <== txData[TX_DATA_AMOUNT_WEI_IDX];
+  validAmount.in[1] <== 0;
+  validAmount.out === 1;
+
+  component validFee = GreaterThan(256);
+  validFee.in[0] <== txData[TX_DATA_FEE_WEI_IDX];
+  validFee.in[1] <== 0;
+  validFee.out === 1;
 
   // Step 2. Make sure that the balance > amount to send + fee
   component senderSufficientBalance = GreaterThan(256);
@@ -96,6 +108,7 @@ template ProcessTx(depth) {
   txSenderLeaf.in[0] <== txSenderPublicKey[0];
   txSenderLeaf.in[1] <== txSenderPublicKey[1];
   txSenderLeaf.in[2] <== txSenderBalance;
+  txSenderLeaf.in[3] <== txSenderNonce;
 
   // Make sure that the leaf does exist in the balance tree
   component correctTxSender = MerkleTreeLeafExists(depth);
@@ -107,17 +120,40 @@ template ProcessTx(depth) {
   }
 
   // Step 4. If the above is valid, create new txSender and txRecipient leaf
+  signal newTxSenderBalance;
+  newTxSenderBalance <== txSenderBalance - txData[TX_DATA_AMOUNT_WEI_IDX] - txData[TX_DATA_FEE_WEI_IDX];
+
   component newTxSenderLeaf = Hasher(BALANCE_TREE_LEAF_DATA_LENGTH);
   newTxSenderLeaf.key <== 0;
   newTxSenderLeaf.in[0] <== txSenderPublicKey[0];
   newTxSenderLeaf.in[1] <== txSenderPublicKey[1];
-  newTxSenderLeaf.in[2] <== txSenderBalance - txData[TX_DATA_AMOUNT_WEI_IDX] - txData[TX_DATA_FEE_WEI_IDX];
+  newTxSenderLeaf.in[2] <== newTxSenderBalance;
+  newTxSenderLeaf.in[3] <== txData[TX_DATA_NONCE_IDX];
+
+  // If sender === recipient, then we need to use the modified
+  // sender data, instead of using the existing recipient data
+  // otherwise they could just keep sending money to themselves and
+  // not get deducted
+  component senderRecipientSame = IsEqual();
+  senderRecipientSame.in[0] <== txData[TX_DATA_FROM_IDX];
+  senderRecipientSame.in[1] <== txData[TX_DATA_TO_IDX];
+
+  component selectedTxRecipientBalance = Mux1();
+  selectedTxRecipientBalance.c[0] <== txRecipientBalance;
+  selectedTxRecipientBalance.c[1] <== newTxSenderBalance;
+  selectedTxRecipientBalance.s <== senderRecipientSame.out;
+
+  component selectedTxRecipientNonce = Mux1();
+  selectedTxRecipientNonce.c[0] <== txRecipientNonce;
+  selectedTxRecipientNonce.c[1] <== txData[TX_DATA_NONCE_IDX];
+  selectedTxRecipientNonce.s <== senderRecipientSame.out;
 
   component newTxRecipientLeaf = Hasher(BALANCE_TREE_LEAF_DATA_LENGTH);
   newTxRecipientLeaf.key <== 0;
   newTxRecipientLeaf.in[0] <== txRecipientPublicKey[0];
   newTxRecipientLeaf.in[1] <== txRecipientPublicKey[1];
-  newTxRecipientLeaf.in[2] <== txRecipientBalance + txData[TX_DATA_AMOUNT_WEI_IDX];
+  newTxRecipientLeaf.in[2] <== selectedTxRecipientBalance.out + txData[TX_DATA_AMOUNT_WEI_IDX];
+  newTxRecipientLeaf.in[3] <== selectedTxRecipientNonce.out;
 
   // Step 5.1 Update txSender
   component computedIntermediateBalanceTree = MerkleTreeRootConstructor(depth);
