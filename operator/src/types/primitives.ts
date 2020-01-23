@@ -58,3 +58,9 @@ export interface Transaction {
   nonce: number;
   signature?: Signature;
 }
+
+export interface BalanceTreeLeafData {
+  publicKey: Publickey;
+  balance: SnarkBigInt;
+  nonce: number;
+}

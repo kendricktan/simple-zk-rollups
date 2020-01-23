@@ -23,7 +23,7 @@ export class MerkleTree {
   // (since the leaf value is hash(rawValue))
   // i.e. leaves[i] == muliHash(leavesRaw[i])
   leaves: SnarkBigInt[];
-  leavesRaw: SnarkBigInt[];
+  leavesRaw: any;
 
   // Maximum number of leaves in the tree
   maxLeafIndex: number;
