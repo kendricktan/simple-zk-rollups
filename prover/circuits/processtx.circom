@@ -110,6 +110,13 @@ template ProcessTx(depth) {
   txSenderLeaf.in[2] <== txSenderBalance;
   txSenderLeaf.in[3] <== txSenderNonce;
 
+  component txRecipientLeaf = Hasher(BALANCE_TREE_LEAF_DATA_LENGTH);
+  txRecipientLeaf.key <== 0;
+  txRecipientLeaf.in[0] <== txRecipientPublicKey[0];
+  txRecipientLeaf.in[1] <== txRecipientPublicKey[1];
+  txRecipientLeaf.in[2] <== txRecipientBalance;
+  txRecipientLeaf.in[3] <== txRecipientNonce;
+
   // Make sure that the leaf does exist in the balance tree
   component correctTxSender = MerkleTreeLeafExists(depth);
   correctTxSender.leaf <== txSenderLeaf.hash;
@@ -117,6 +124,14 @@ template ProcessTx(depth) {
   for (var i = 0; i < depth; i++) {
     correctTxSender.pathElements[i] <== txSenderPathElements[i];
     correctTxSender.pathIndexes[i] <== txSenderPathIndexes.out[i];
+  }
+
+  component correctTxRecipient = MerkleTreeLeafExists(depth);
+  correctTxRecipient.leaf <== txRecipientLeaf.hash;
+  correctTxRecipient.root <== balanceTreeRoot;
+  for (var i = 0; i < depth; i++) {
+    correctTxRecipient.pathElements[i] <== txRecipientPathElements[i];
+    correctTxRecipient.pathIndexes[i] <== txRecipientPathIndexes.out[i];
   }
 
   // Step 4. If the above is valid, create new txSender and txRecipient leaf

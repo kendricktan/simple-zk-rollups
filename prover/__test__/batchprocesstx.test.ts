@@ -32,7 +32,6 @@ interface User {
   publicKey: Publickey;
 }
 
-//@ts-ignore
 interface ProcessTxAccumulator {
   tx: Transaction;
   balanceTree: MerkleTree;
@@ -40,11 +39,22 @@ interface ProcessTxAccumulator {
   finalBalanceTree: MerkleTree;
 }
 
+const generateUser = (index: number): User => {
+  const privateKey = genPrivateKey();
+  const publicKey = genPublicKey(privateKey);
+
+  return {
+    index,
+    privateKey,
+    publicKey
+  };
+};
+
 const generateTransaction = (
   balanceTree: MerkleTree,
   users: User[]
 ): Transaction => {
-  const sender: User = randomItem(users);
+  const sender: User = users[0];
   const recipient: User = randomItem(users);
 
   const amount = toWei(1);
@@ -69,58 +79,37 @@ const generateTransaction = (
   return tx;
 };
 
-const generateUser = (index: number): User => {
-  const privateKey = genPrivateKey();
-  const publicKey = genPublicKey(privateKey);
-
-  return {
-    index,
-    privateKey,
-    publicKey
-  };
-};
-
 const processTransaction = (
   acc: ProcessTxAccumulator
 ): ProcessTxAccumulator => {
   const { tx, finalBalanceTree } = acc;
 
   // New tree starts from previous last tree
-  const balanceTree = copyObject(finalBalanceTree);
-
-  const sender: BalanceTreeLeafData = copyObject(
-    balanceTree.leavesRaw[tx.from]
-  );
-  const recipient: BalanceTreeLeafData = copyObject(
-    balanceTree.leavesRaw[tx.to]
-  );
-
-  // Recipient new data is determined if sender === recipient
-  const newRecipientBalance =
-    tx.from === tx.to
-      ? recipient.balance.sub(tx.fee)
-      : recipient.balance.add(tx.amount);
-
-  const newRecipientNonce =
-    tx.from === tx.to ? recipient.nonce + 1 : recipient.nonce;
+  const prevFinalBalanceTree = copyObject(finalBalanceTree);
 
   // Update sender
+  const sender: BalanceTreeLeafData = copyObject(
+    prevFinalBalanceTree.leavesRaw[tx.from]
+  );
   const intermediateBalanceTreeLeafData: BalanceTreeLeafData = {
     publicKey: sender.publicKey,
     balance: sender.balance.sub(tx.amount).sub(tx.fee),
     nonce: sender.nonce + 1
   };
-  const newIntermediateBalanceTree: MerkleTree = balanceTree.update(
+  const newIntermediateBalanceTree: MerkleTree = prevFinalBalanceTree.update(
     tx.from,
     hashBalanceTreeLeaf(intermediateBalanceTreeLeafData),
     intermediateBalanceTreeLeafData
   );
 
   // Update recipient
+  const recipient: BalanceTreeLeafData = copyObject(
+    newIntermediateBalanceTree.leavesRaw[tx.to]
+  );
   const finalBalanceTreeLeafData: BalanceTreeLeafData = {
     publicKey: recipient.publicKey,
-    balance: newRecipientBalance,
-    nonce: newRecipientNonce
+    balance: recipient.balance.add(tx.amount),
+    nonce: recipient.nonce
   };
   const newFinalBalanceTree: MerkleTree = newIntermediateBalanceTree.update(
     tx.to,
@@ -130,7 +119,7 @@ const processTransaction = (
 
   return {
     tx,
-    balanceTree,
+    balanceTree: prevFinalBalanceTree,
     intermediateBalanceTree: newIntermediateBalanceTree,
     finalBalanceTree: newFinalBalanceTree
   };
@@ -144,7 +133,7 @@ describe("batchprocesstx.circom", () => {
     const circuit = new Circuit(circuitDef);
 
     const numberOfUsers = 10;
-    const batchSize = 2;
+    const batchSize = 4;
     const depth = 4;
 
     const arrayUsersNo = Array(numberOfUsers).fill(0);
@@ -161,7 +150,7 @@ describe("batchprocesstx.circom", () => {
     );
 
     // Create balanceTree
-    const balanceTree: MerkleTree = balanceTreeLeafData.reduce(
+    const initialBalanceTree: MerkleTree = balanceTreeLeafData.reduce(
       (acc: MerkleTree, leafData: BalanceTreeLeafData): MerkleTree => {
         return acc.insert(hashBalanceTreeLeaf(leafData), leafData);
       },
@@ -171,18 +160,18 @@ describe("batchprocesstx.circom", () => {
     // Process transactions
     const processedTxs: ProcessTxAccumulator[] = arrayBatchSize.reduce(
       (acc: ProcessTxAccumulator[], _) => {
-        const tx = generateTransaction(balanceTree, users);
-
         if (acc.length === 0) {
+          const tx = generateTransaction(initialBalanceTree, users);
           const processedTx = processTransaction({
             tx,
-            balanceTree,
-            intermediateBalanceTree: balanceTree,
-            finalBalanceTree: balanceTree
+            balanceTree: initialBalanceTree,
+            intermediateBalanceTree: initialBalanceTree,
+            finalBalanceTree: initialBalanceTree
           });
           acc.push(processedTx);
         } else {
           const lastAcc: ProcessTxAccumulator = acc.slice(-1)[0];
+          const tx = generateTransaction(lastAcc.finalBalanceTree, users);
           const processedTx = processTransaction({
             tx,
             balanceTree: lastAcc.balanceTree,
@@ -224,8 +213,8 @@ describe("batchprocesstx.circom", () => {
           txSenderNonce: sender.nonce,
           txSenderPathElements: senderPaths.pathElements,
           txRecipientPublicKey: recipient.publicKey,
-          txRecipientBalance: sender.balance,
-          txRecipientNonce: sender.nonce,
+          txRecipientBalance: recipient.balance,
+          txRecipientNonce: recipient.nonce,
           txRecipientPathElements: recipientPaths.pathElements,
           intermediateBalanceTreeRoot: intermediateBalanceTree.root,
           intermediateBalanceTreePathElements:

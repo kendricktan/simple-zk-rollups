@@ -1,3 +1,3 @@
 include "../../circuits/batchprocesstx.circom";
 
-component main = BatchProcessTx(2, 4);
+component main = BatchProcessTx(4, 4);
