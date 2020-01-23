@@ -1,0 +1,15 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "Kendrick Tan <kendricktan0814@gmail.com>",
+  "dependencies": {
+    "@openzeppelin/contracts": "^2.4.0",
+    "@truffle/artifactor": "^4.0.44",
+    "circomlib": "^0.0.20",
+    "truffle": "^5.1.9"
+  },
+  "devDependencies": {
+    "ganache": "^6.4.4"
+  }
+}
