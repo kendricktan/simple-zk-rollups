@@ -1,4 +1,5 @@
 const MerkleTree = artifacts.require("MerkleTree");
+const RollUp = artifacts.require("RollUp");
 const CircomLib = artifacts.require("CircomLib");
 const Hasher = artifacts.require("Hasher");
 
@@ -19,8 +20,15 @@ module.exports = async deployer => {
     hasher.address
   );
 
+  // Deploy RollUp
+  const rollUp = await deployer.deploy(
+    RollUp,
+    balanceTree.address,
+    hasher.address
+  );
+
   // TODO:
   // Allow zk-rollups contract to call `insert` and `update` methods
   // on the MerkleTrees
-  // await stateTree.whitelistAddress(maci.address);
+  await balanceTree.whitelistAddress(rollUp.address);
 };

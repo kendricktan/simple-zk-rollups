@@ -115,15 +115,18 @@ export class MerkleTree {
       throw new Error("Can't update leafIndex which hasn't been inserted yet!");
     }
 
-    const { pathElements } = copyA.getUpdatePath(leafIndex);
-
-    copyA.update_(leafIndex, leaf, rawValue, pathElements);
+    copyA.update_(leafIndex, leaf, rawValue);
 
     return copyA;
   }
 
+  update_(leafIndex: number, leaf: SnarkBigInt, rawValue: any = {}) {
+    const { pathElements } = this.getUpdatePath(leafIndex);
+    this.updateWithManualPath_(leafIndex, leaf, rawValue, pathElements);
+  }
+
   // Stateful update
-  update_(
+  updateWithManualPath_(
     leafIndex: number,
     leaf: SnarkBigInt,
     rawValue: any,

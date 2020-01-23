@@ -24,7 +24,6 @@ pragma solidity 0.5.11;
 import "./Hasher.sol";
 import "./Whitelist.sol";
 
-
 contract MerkleTree is Whitelist {
     // Hasher object
     Hasher hasher;
@@ -48,17 +47,19 @@ contract MerkleTree is Whitelist {
     // inserting of new leaves
     uint256[] internal filledSubtrees;
 
+    // Filled 'paths' - used for optimized
+    // updating of paths
+    mapping(uint256 => mapping(uint256 => uint256)) internal filledPaths;
+
     // Stores hashes of zeros
     uint256[] internal zeros;
 
     event LeafAdded(uint256 leaf, uint256 leafIndex);
     event LeafUpdated(uint256 leaf, uint256 leafIndex);
 
-    constructor(
-      uint256 _depth,
-      uint256 _zeroValue,
-      address hasherAddress
-    ) public {
+    constructor(uint256 _depth, uint256 _zeroValue, address hasherAddress)
+        public
+    {
         // Hasher object
         hasher = Hasher(hasherAddress);
 
@@ -72,7 +73,7 @@ contract MerkleTree is Whitelist {
         filledSubtrees.push(zeros[0]);
 
         for (uint8 i = 1; i < depth; i++) {
-            zeros.push(hasher.hashPair(zeros[i-1], zeros[i-1]));
+            zeros.push(hasher.hashPair(zeros[i - 1], zeros[i - 1]));
             filledSubtrees.push(zeros[i]);
         }
 
@@ -80,7 +81,6 @@ contract MerkleTree is Whitelist {
         root = hasher.hashPair(zeros[depth - 1], zeros[depth - 1]);
         nextLeafIndex = 0;
     }
-
 
     // Inserts (appends) a new leaf into the
     // merkle tree
@@ -101,9 +101,15 @@ contract MerkleTree is Whitelist {
                 right = zeros[i];
 
                 filledSubtrees[i] = currentLevelHash;
+
+                filledPaths[i][currentIndex] = left;
+                filledPaths[i][currentIndex + 1] = right;
             } else {
                 left = filledSubtrees[i];
                 right = currentLevelHash;
+
+                filledPaths[i][currentIndex - 1] = left;
+                filledPaths[i][currentIndex] = right;
             }
 
             currentLevelHash = hasher.hashPair(left, right);
@@ -117,18 +123,30 @@ contract MerkleTree is Whitelist {
     }
 
     // Updates leaf of merkle tree at index `leafIndex`
-    function update(
-        uint256 leafIndex,
-        uint256 leaf,
-        uint256[] memory path
-    ) public whitelisted {
-        require(leafIndex < nextLeafIndex, "Can't update a leaf which hasn't been inserted!");
+    function update(uint256 leafIndex, uint256 leaf) public whitelisted {
+        require(
+            leafIndex < nextLeafIndex,
+            "Can't update a leaf which hasn't been inserted!"
+        );
 
         uint256 currentIndex = leafIndex;
+
+        uint256[] memory path = new uint256[](depth);
+
+        for (uint8 i = 0; i < depth; i++) {
+            if (currentIndex % 2 == 0) {
+                path[i] = filledPaths[i][currentIndex + 1];
+            } else {
+                path[i] = filledPaths[i][currentIndex - 1];
+            }
+            currentIndex /= 2;
+        }
 
         uint256 currentLevelHash = leaves[leafIndex];
         uint256 left;
         uint256 right;
+
+        currentIndex = leafIndex;
 
         for (uint8 i = 0; i < depth; i++) {
             if (currentIndex % 2 == 0) {
@@ -143,7 +161,10 @@ contract MerkleTree is Whitelist {
             currentIndex /= 2;
         }
 
-        require(root == currentLevelHash, "MerkleTree: tree root / current level hash mismatch");
+        require(
+            root == currentLevelHash,
+            "MerkleTree: tree root / current level hash mismatch"
+        );
 
         currentIndex = leafIndex;
         currentLevelHash = leaf;
@@ -152,9 +173,15 @@ contract MerkleTree is Whitelist {
             if (currentIndex % 2 == 0) {
                 left = currentLevelHash;
                 right = path[i];
+
+                filledPaths[i][currentIndex] = left;
+                filledPaths[i][currentIndex + 1] = right;
             } else {
                 left = path[i];
                 right = currentLevelHash;
+
+                filledPaths[i][currentIndex - 1] = left;
+                filledPaths[i][currentIndex] = right;
             }
 
             currentLevelHash = hasher.hashPair(left, right);
@@ -167,8 +194,12 @@ contract MerkleTree is Whitelist {
         emit LeafUpdated(leaf, leafIndex);
     }
 
-    function hashLeftRight(uint256 left, uint256 right) public view returns (uint256) {
-      return hasher.hashPair(left, right);
+    function hashLeftRight(uint256 left, uint256 right)
+        public
+        view
+        returns (uint256)
+    {
+        return hasher.hashPair(left, right);
     }
 
     /*** Getters ***/
