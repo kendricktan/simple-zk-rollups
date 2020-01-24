@@ -6,6 +6,7 @@
   "dependencies": {
     "@openzeppelin/contracts": "^2.4.0",
     "@truffle/artifactor": "^4.0.44",
+    "@types/mocha": "^5.2.7",
     "circomlib": "^0.0.20",
     "ethers": "^4.0.43",
     "snarkjs": "^0.1.20",

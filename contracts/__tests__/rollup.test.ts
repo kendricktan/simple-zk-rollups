@@ -10,7 +10,7 @@ import {
 } from "./common";
 
 import { genPrivateKey, genPublicKey } from "../../operator/src/utils/crypto";
-import { toWei } from "../../operator/src/utils/helpers";
+import { toWei, toWeiHex } from "../../operator/src/utils/helpers";
 
 describe("Rollup.sol", () => {
   let balanceTreeContract;
@@ -45,7 +45,7 @@ describe("Rollup.sol", () => {
     }
   });
 
-  it("Deposit and then Withdraw", async () => {
+  it("Deposit, then Withdraw", async () => {
     const priv = genPrivateKey();
     const pub = genPublicKey(priv);
 
@@ -58,8 +58,7 @@ describe("Rollup.sol", () => {
 
     // User is registered once deposited
     await rollUpContract.deposit(pub[0].toString(), pub[1].toString(), {
-      //@ts-ignore
-      value: "0x" + toWei(1.0).toString(16)
+      value: toWeiHex(1.25)
     });
 
     const isRegistered = await rollUpContract.isRegistered(
@@ -81,7 +80,7 @@ describe("Rollup.sol", () => {
     expect(userData[2].toString()).toEqual(pub[1].toString());
 
     // Balance
-    expect(bigInt(userData[3].toString())).toBeGreaterThan(bigInt(0));
+    expect(bigInt(userData[3].toString())).toEqual(toWei(1.25));
 
     // Nonce
     expect(userData[4].toString()).toEqual(bigInt(0).toString());
@@ -103,7 +102,7 @@ describe("Rollup.sol", () => {
     expect(bigInt(newUserData[3].toString())).toEqual(bigInt(0));
   });
 
-  it("Multiple Users, multiple deposits", async () => {
+  it("Multiple deposits", async () => {
     const privA = genPrivateKey();
     const pubA = genPublicKey(privA);
 
@@ -112,20 +111,17 @@ describe("Rollup.sol", () => {
 
     // User A deposits 1 eth
     await rollUpContract.deposit(pubA[0].toString(), pubA[1].toString(), {
-      //@ts-ignore
-      value: "0x" + toWei(1.0).toString(16)
+      value: toWeiHex(1.0)
     });
 
     // User B deposits 2 eth
     await rollUpContract.deposit(pubB[0].toString(), pubB[1].toString(), {
-      //@ts-ignore
-      value: "0x" + toWei(2.0).toString(16)
+      value: toWeiHex(2.0)
     });
 
     // User A deposits 0.5 eth
     await rollUpContract.deposit(pubA[0].toString(), pubA[1].toString(), {
-      //@ts-ignore
-      value: "0x" + toWei(0.5).toString(16)
+      value: toWeiHex(0.5)
     });
 
     // Get User A Data
@@ -136,5 +132,24 @@ describe("Rollup.sol", () => {
 
     // Expect balance
     expect(bigInt(userAData[3].toString())).toEqual(toWei(1.5));
+
+    // Get user data
+    const userBData = await rollUpContract.getUserData(
+      pubB[0].toString(),
+      pubB[1].toString()
+    );
+
+    // Leaf Index
+    expect(userBData[0].toString()).toEqual(bigInt(1).toString());
+
+    // Public Key
+    expect(userBData[1].toString()).toEqual(pubB[0].toString());
+    expect(userBData[2].toString()).toEqual(pubB[1].toString());
+
+    // Balance
+    expect(bigInt(userBData[3].toString())).toEqual(toWei(2.0));
+
+    // Nonce
+    expect(userBData[4].toString()).toEqual(bigInt(0).toString());
   });
 });

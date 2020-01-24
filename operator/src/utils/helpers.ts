@@ -39,6 +39,10 @@ export const toWei = (e: number): Wei => {
   return bigInt(ethers.utils.parseEther(e.toString()));
 };
 
+export const toWeiHex = (e: number): String => {
+  return "0x" + toWei(e).toString(16);
+};
+
 export const fromWei = (w: Wei): number => {
   return parseFloat(ethers.utils.formatEther(w.toString()));
 };
