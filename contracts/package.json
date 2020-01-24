@@ -29,7 +29,7 @@
   },
   "scripts": {
     "ganache": "ganache-cli -l 8000000 -m helloworld",
-    "test": "jest --coverage --no-cache",
-    "test:watch": "jest --watch"
+    "test": "jest --coverage --no-cache --runInBand",
+    "test:watch": "jest --watch --runInBand"
   }
 }

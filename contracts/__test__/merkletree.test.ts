@@ -1,29 +1,13 @@
-import { ethers } from "ethers";
 import { bigInt } from "snarkjs";
 
-import { ganacheConfig } from "./ganache-config";
+import {
+  sleep,
+  deployCircomLib,
+  deployHasher,
+  deployMerkleTree
+} from "./common";
 import { createMerkleTree } from "../../operator/src/utils/merkletree";
 import { multiHash, genPrivateKey } from "../../operator/src/utils/crypto";
-
-// Workaround to link external libraries
-// https://github.com/ethers-io/ethers.js/issues/195#issuecomment-396350174
-const linkLibraries = (
-  bytecode: string,
-  libName: string,
-  libAddress: string
-): string => {
-  let symbol = "__" + libName + "_".repeat(40 - libName.length - 2);
-  return bytecode.split(symbol).join(libAddress.toLowerCase().substr(2));
-};
-
-const provider = new ethers.providers.JsonRpcProvider();
-const privateKey = ganacheConfig.privateKey;
-
-const wallet = new ethers.Wallet(privateKey, provider);
-
-const circomLibDef = require("../build/contracts/CircomLib.json");
-const hasherDef = require("../build/contracts/Hasher.json");
-const merkletreeDef = require("../build/contracts/MerkleTree.json");
 
 describe("MerkleTree.sol", () => {
   let circomLibContract;
@@ -34,38 +18,20 @@ describe("MerkleTree.sol", () => {
   const zeroValue = bigInt(0);
 
   beforeAll(async () => {
-    //@ts-ignore
-    const circomLibFactory = new ethers.ContractFactory(
-      circomLibDef.abi,
-      circomLibDef.bytecode,
-      wallet
-    );
-
-    circomLibContract = await circomLibFactory.deploy();
-    await circomLibContract.deployed();
-
-    const hasherFactory = new ethers.ContractFactory(
-      hasherDef.abi,
-      linkLibraries(hasherDef.bytecode, "CircomLib", circomLibContract.address),
-      wallet
-    );
-    hasherContract = await hasherFactory.deploy();
-    await hasherContract.deployed();
+    circomLibContract = await deployCircomLib();
+    hasherContract = await deployHasher(circomLibContract.address);
   });
 
   beforeEach(async () => {
-    const merkleTreeFactory = new ethers.ContractFactory(
-      merkletreeDef.abi,
-      merkletreeDef.bytecode,
-      wallet
-    );
-    merkleTreeContract = await merkleTreeFactory.deploy(
+    while (hasherContract === undefined) {
+      await sleep(500);
+    }
+
+    merkleTreeContract = await deployMerkleTree(
       depth,
-      zeroValue.toString(),
+      zeroValue,
       hasherContract.address
     );
-    await merkleTreeContract.deployed();
-    await merkleTreeContract.whitelistAddress(wallet.address);
   });
 
   it("Insert", async () => {
