@@ -5,7 +5,7 @@ module.exports = {
     name: "balanceTree",
     depth:
       process.env.BALANCE_TREE_DEPTH === undefined
-        ? 2
+        ? 6
         : parseInt(process.env.BALANCE_TREE_DEPTH),
     zeroValue:
       process.env.BALANCE_TREE_ZERO_VALUE === undefined
@@ -15,7 +15,7 @@ module.exports = {
   processTxCircuit: {
     batchSize:
       process.env.PROCESS_TX_CIRCUIT_BATCH_SIZE === undefined
-        ? 4
+        ? 32
         : parseInt(process.env.PROCESS_TX_CIRCUIT_BATCH_SIZE)
   },
   web3: {

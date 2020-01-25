@@ -54,7 +54,7 @@ export class MerkleTree {
     this.leaves = [];
     this.leavesRaw = [];
 
-    this.maxLeafIndex = Math.pow(2, depth);
+    this.maxLeafIndex = Math.pow(2, depth - 1);
 
     this.zeros = {
       0: zeroValue
@@ -189,6 +189,10 @@ export class MerkleTree {
 
   // Stateful Insert
   insert_(leaf: SnarkBigInt, rawValue: any = {}) {
+    if (this.nextLeafIndex + 1 >= this.maxLeafIndex) {
+      throw new Error("Merkle Tree at max capacity");
+    }
+
     let curIdx = this.nextLeafIndex;
     this.nextLeafIndex += 1;
 

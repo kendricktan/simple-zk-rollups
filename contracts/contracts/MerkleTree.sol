@@ -65,7 +65,7 @@ contract MerkleTree is Whitelist {
 
     // Depth of the tree
     depth = _depth;
-    maxLeafIndex = 2**_depth;
+    maxLeafIndex = 2**(_depth - 1);
 
     // 'Caches' zero values and filledSubTrees
     // for optimized inserts later on
@@ -85,7 +85,7 @@ contract MerkleTree is Whitelist {
   // Inserts (appends) a new leaf into the
   // merkle tree
   function insert(uint256 leaf) public whitelisted {
-    require(nextLeafIndex < maxLeafIndex, "Merkle Tree at max capacity");
+    require(nextLeafIndex + 1 <= maxLeafIndex, "Merkle Tree at max capacity");
 
     uint256 leafIndex = nextLeafIndex;
     uint256 currentIndex = nextLeafIndex;

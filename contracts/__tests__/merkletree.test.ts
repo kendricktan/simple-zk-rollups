@@ -54,16 +54,16 @@ describe("MerkleTree.sol", () => {
       expect(m.root.toString()).toEqual(root.toString());
     }
 
-    const newLeafIndex = 2;
-    const newLeaf = multiHash([genPrivateKey()]);
+    const leavesNew = [0, 0, 0, 0].map(() => multiHash([genPrivateKey()]));
 
-    m.update_(newLeafIndex, newLeaf);
-    await merkleTreeContract.update(
-      newLeafIndex.toString(),
-      newLeaf.toString()
-    );
+    for (let i = 0; i < leavesNew.length; i++) {
+      const leaf = leavesNew[i];
 
-    const root = await merkleTreeContract.getRoot();
-    expect(m.root.toString()).toEqual(root.toString());
+      m.update_(i, leaf);
+      await merkleTreeContract.update(i.toString(), leaf.toString());
+
+      const root = await merkleTreeContract.getRoot();
+      expect(m.root.toString()).toEqual(root.toString());
+    }
   });
 });

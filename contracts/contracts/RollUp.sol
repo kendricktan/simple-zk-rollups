@@ -45,6 +45,7 @@ contract RollUp {
     uint256 balance;
     uint256 nonce;
   }
+  mapping(uint256 => address) balanceTreeOwners;
   mapping(uint256 => User) balanceTreeUsers;
   mapping(uint256 => bool) isPublicKeysRegistered;
 
@@ -115,6 +116,7 @@ contract RollUp {
   function withdraw(uint256 publicKeyX, uint256 publicKeyY, uint256 amount)
     public
   {
+    // TODO: Convert this into a circom proof
     uint256 publicKeyHash = hasher.hashPair(publicKeyX, publicKeyY);
 
     User storage user = balanceTreeUsers[publicKeyHash];
