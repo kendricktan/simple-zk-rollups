@@ -38,6 +38,7 @@
     "circomlib": "0.0.20",
     "ethers": "^4.0.43",
     "ganache-cli": "^6.8.2",
+    "pg": "^7.17.1",
     "snarkjs": "0.1.20",
     "truffle": "^5.1.9",
     "tslib": "~1.10.0",

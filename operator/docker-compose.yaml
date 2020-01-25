@@ -1,0 +1,25 @@
+version: "3.7"
+services:
+  redis:
+    image: redis:alpine3.10
+    command: redis-server --requirepass simplezkrollups
+    ports:
+      - "6379:6379"
+  postgres:
+    image: postgres:11-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: simplezkrollups
+      POSTGRES_PASSWORD: simplezkrollups
+      POSTGRES_DB: simplezkrollups
+    healthcheck:
+      test: pg_isready -U simplezkrollups
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  ganache:
+    image: trufflesuite/ganache-cli:v6.7.0
+    entrypoint: /bin/sh -c "npx ganache-cli -l 8000000 -m helloworld"
+    ports:
+      - "8545:8545"

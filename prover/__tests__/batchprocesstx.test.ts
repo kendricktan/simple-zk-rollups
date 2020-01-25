@@ -2,12 +2,11 @@ import * as path from "path";
 import * as compiler from "circom";
 
 import { Circuit, bigInt } from "snarkjs";
+import { PrivateKey, Publickey } from "../../operator/src/types/primitives";
 import {
   Transaction,
-  PrivateKey,
-  Publickey,
   BalanceTreeLeafData
-} from "../../operator/src/types/primitives";
+} from "../../operator/src/types/models";
 import {
   toWei,
   formatTx,

@@ -9,9 +9,9 @@ import {
   EncryptedMessage,
   PrivateKey,
   Publickey,
-  Message,
-  Signature
+  Message
 } from "../types/primitives";
+import { Signature } from "../types/models";
 
 export const SNARK_FIELD_SIZE: SnarkBigInt = bigInt(
   "21888242871839275222246405745257275088548364400416034343698204186575808495617"

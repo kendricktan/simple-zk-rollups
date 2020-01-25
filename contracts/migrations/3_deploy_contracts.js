@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 const MerkleTree = artifacts.require("MerkleTree");
 const RollUp = artifacts.require("RollUp");
 const CircomLib = artifacts.require("CircomLib");
@@ -27,8 +30,19 @@ module.exports = async deployer => {
     hasher.address
   );
 
-  // TODO:
   // Allow zk-rollups contract to call `insert` and `update` methods
   // on the MerkleTrees
   await balanceTree.whitelistAddress(rollUp.address);
+
+  // Saves Deployed Addresses to a JSON file
+  const data = JSON.stringify({
+    balanceTreeAddress: balanceTree.address,
+    rollUpAddress: rollUp.address
+  });
+
+  const buildDir = path.resolve(__dirname, "../build");
+  if (!fs.existsSync(buildDir)) {
+    fs.mkdirSync(buildDir);
+  }
+  fs.writeFileSync(path.resolve(buildDir, "DeployedAddresses.json"), data);
 };

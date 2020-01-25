@@ -1,8 +1,10 @@
+import { Pool } from "pg";
+
 import { bigInt } from "snarkjs";
 
 import { multiHash } from "./crypto";
 import { SnarkBigInt } from "../types/primitives";
-import { copyObject, stringifyBigInts } from "./helpers";
+import { copyObject, stringifyBigInts, unstringifyBigInts } from "./helpers";
 
 export interface MerkleTreePath {
   pathElements: SnarkBigInt[];
@@ -256,3 +258,129 @@ export const createMerkleTree = (
   zeroValue: SnarkBigInt = bigInt(0),
   hashFunc: (data: SnarkBigInt[]) => SnarkBigInt = multiHash
 ): MerkleTree => new MerkleTree(depth, zeroValue, hashFunc);
+
+export const saveMerkleTreeToDb = async (
+  pool: Pool,
+  mtName: string,
+  mt: MerkleTree,
+  leafIndex?: number
+) => {
+  const mtQuery = {
+    text: `INSERT INTO
+      merkletrees(
+        name,
+        depth,
+        next_index,
+        root,
+        zero_value,
+        zeros,
+        filled_sub_trees,
+        filled_paths
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8
+      ) ON CONFLICT (name) DO UPDATE SET
+        name = excluded.name,
+        depth = excluded.depth,
+        next_index = excluded.next_index,
+        root = excluded.root,
+        zero_value = excluded.zero_value,
+        zeros = excluded.zeros,
+        filled_sub_trees = excluded.filled_sub_trees,
+        filled_paths = excluded.filled_paths
+      ;`,
+    values: [
+      mtName,
+      mt.depth,
+      mt.nextLeafIndex,
+      stringifyBigInts(mt.root),
+      stringifyBigInts(mt.zeroValue),
+      stringifyBigInts(mt.zeros),
+      stringifyBigInts(mt.filledSubtrees),
+      stringifyBigInts(mt.filledPaths)
+    ]
+  };
+
+  // Saves merkle tree state
+  await pool.query(mtQuery);
+
+  // Get merkletree id from db
+  const mtTreeRes = await pool.query({
+    text: "SELECT * FROM merkletrees WHERE name = $1 LIMIT 1;",
+    values: [mtName]
+  });
+  const mtTreeId = mtTreeRes.rows[0].id;
+
+  // Current leaf index
+  const selectedLeafIndex =
+    leafIndex === undefined ? mt.nextLeafIndex - 1 : leafIndex;
+
+  const leafQuery = {
+    text: `INSERT INTO 
+          leaves(merkletree_id, index, raw, hash)
+          VALUES($1, $2, $3, $4)
+          ON CONFLICT(merkletree_id, index) DO UPDATE SET
+            merkletree_id = excluded.merkletree_id,
+            index = excluded.index,
+            raw = excluded.raw,
+            hash = excluded.hash
+          `,
+    values: [
+      mtTreeId,
+      selectedLeafIndex,
+      {
+        data: JSON.stringify(stringifyBigInts(mt.leavesRaw[selectedLeafIndex]))
+      },
+      stringifyBigInts(mt.leaves[selectedLeafIndex])
+    ]
+  };
+
+  // Saves latest leaf to merkletree id
+  await pool.query(leafQuery);
+};
+
+export const loadMerkleTreeFromDb = async (
+  pool: Pool,
+  mtName: String
+): Promise<MerkleTree> => {
+  const mtQuery = {
+    text: "SELECT * FROM merkletrees WHERE name = $1 LIMIT 1;",
+    values: [mtName]
+  };
+  const mtResp = await pool.query(mtQuery);
+
+  if (mtResp.rows.length === 0) {
+    throw new Error(`MerkleTree named ${mtName} not found in database`);
+  }
+
+  // Get MerkleTree result
+  const mtRes = mtResp.rows[0];
+  const mtResBigInt = unstringifyBigInts(mtResp.rows[0]);
+
+  const mt = createMerkleTree(mtRes.depth, mtResBigInt.zero_value);
+
+  mt.nextLeafIndex = mtRes.next_index;
+  mt.root = mtResBigInt.root;
+  mt.zeros = mtResBigInt.zeros;
+  mt.filledSubtrees = mtResBigInt.filled_sub_trees;
+  mt.filledPaths = mtResBigInt.filled_paths;
+
+  // Get leaves
+  const leavesQuery = {
+    text: "SELECT * FROM leaves WHERE merkletree_id = $1 ORDER BY index ASC;",
+    values: [mtRes.id]
+  };
+  const leavesResp = await pool.query(leavesQuery);
+
+  // Get leaves values
+  const leaves = leavesResp.rows.map(
+    (x: any): BigInt => unstringifyBigInts(x.hash)
+  );
+  const leavesRaw = leavesResp.rows.map((x: any): any =>
+    unstringifyBigInts(JSON.parse(x.raw.data))
+  );
+
+  mt.leaves = leaves;
+  mt.leavesRaw = leavesRaw;
+
+  return mt;
+};

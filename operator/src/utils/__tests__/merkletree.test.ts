@@ -1,6 +1,12 @@
 import { bigInt } from "snarkjs";
-import { stringify } from "../helpers";
-import { MerkleTree, createMerkleTree } from "../merkletree";
+import { stringify, randomRange } from "../helpers";
+import { pgPool, initDb } from "../../db/postgres";
+import {
+  MerkleTree,
+  createMerkleTree,
+  saveMerkleTreeToDb,
+  loadMerkleTreeFromDb
+} from "../merkletree";
 import { hash, multiHash, genPrivateKey } from "../crypto";
 import { SnarkBigInt } from "../../types/primitives";
 
@@ -64,5 +70,71 @@ describe("merkletree.ts", () => {
 
     expect(stringify(m2.leavesRaw[2])).toEqual(stringify(leafRaw));
     expect(stringify(m2.leaves[2])).toEqual(stringify(leaf));
+  });
+
+  it("Serialization to/from Postgres", async () => {
+    await initDb();
+
+    const mtName = `TestMerkleTree${randomRange(0, 32767).toString()}`;
+    const mt1 = createMerkleTree(4, bigInt(0));
+
+    const n1 = [genPrivateKey()];
+    const n2 = [genPrivateKey()];
+    const n3 = [genPrivateKey()];
+
+    // Need to save on every insert
+    const h1 = multiHash(n1);
+    const h2 = multiHash(n2);
+    const h3 = multiHash(n3);
+
+    const raw1 = n1;
+    const raw2 = { inner: n2 };
+    const raw3 = [n3];
+
+    mt1.insert_(h1, raw1);
+    mt1.insert_(h2, raw2);
+    mt1.insert_(h3, raw3);
+
+    // Saves index 0 to merkletree (h1)
+    await saveMerkleTreeToDb(pgPool, mtName, mt1, 0);
+
+    // Saves index 1 to merkletree (h2)
+    await saveMerkleTreeToDb(pgPool, mtName, mt1, 1);
+
+    // Saves latest index to merkletree (h3)
+    await saveMerkleTreeToDb(pgPool, mtName, mt1);
+
+    const mt2 = await loadMerkleTreeFromDb(pgPool, mtName);
+
+    expect(mt1.equals(mt2)).toEqual(true);
+
+    // Update second element
+    const h2New = multiHash([h1, h2, h3]);
+    mt1.update(1, h2New);
+
+    // Saves updated leave to database
+    await saveMerkleTreeToDb(pgPool, mtName, mt1, 1);
+
+    // Compare trees
+    const mt3 = await loadMerkleTreeFromDb(pgPool, mtName);
+
+    expect(mt1.equals(mt3)).toEqual(true);
+
+    // Make sure the saves raw values are the same too
+    expect(stringify(mt3.leavesRaw[0])).toEqual(stringify(raw1));
+    expect(stringify(mt3.leavesRaw[1])).toEqual(stringify(raw2));
+    expect(stringify(mt3.leavesRaw[2])).toEqual(stringify(raw3));
+
+    // Delete from merkletree
+    await pgPool.query({
+      text: `DELETE FROM leaves
+             WHERE merkletree_id=(SELECT id from merkletrees WHERE name=$1);`,
+      values: [mtName]
+    });
+
+    await pgPool.query({
+      text: "DELETE FROM merkletrees WHERE name=$1",
+      values: [mtName]
+    });
   });
 });

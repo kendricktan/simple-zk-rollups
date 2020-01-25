@@ -28,7 +28,7 @@
   "scripts": {
     "circuit:compile": "mkdir -p build && circom circuits/main.circom -o build/circuit.json",
     "circuit:setup": "snarkjs setup --protocol groth -c build/circuit.json --pk build/provingKey.json --vk build/verifyingKey.json",
-    "circuit:generateverifier": "snarkjs generateverifier --pk build/provingKey.json --vk build/verifyingKey.json -v Verifier.sol && mov Verifier.sol ../contracts/contracts/Verifier.sol",
+    "circuit:generateverifier": "snarkjs generateverifier --pk build/provingKey.json --vk build/verifyingKey.json -v ../contracts/contracts/Verifier.sol",
     "test": "jest --no-cache --testTimeout 60000",
     "test:watch": "jest --watch"
   }

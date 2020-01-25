@@ -43,24 +43,4 @@ export interface EncryptedMessage {
 }
 export type Message = SnarkBigInt[];
 
-export interface Signature {
-  R8: [SnarkBigInt, SnarkBigInt];
-  S: SnarkBigInt;
-}
-
 export type Wei = SnarkBigInt;
-
-export interface Transaction {
-  from: number;
-  to: number;
-  amount: Wei;
-  fee: Wei;
-  nonce: number;
-  signature?: Signature;
-}
-
-export interface BalanceTreeLeafData {
-  publicKey: Publickey;
-  balance: SnarkBigInt;
-  nonce: number;
-}

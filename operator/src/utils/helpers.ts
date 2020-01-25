@@ -3,12 +3,8 @@ import * as s from "snarkjs/src/stringifybigint";
 import { ethers } from "ethers";
 import { bigInt } from "snarkjs";
 
-import {
-  Transaction,
-  SnarkBigInt,
-  Wei,
-  BalanceTreeLeafData
-} from "../types/primitives";
+import { SnarkBigInt, Wei } from "../types/primitives";
+import { Transaction, BalanceTreeLeafData } from "../types/models";
 import { multiHash } from "./crypto";
 
 export const copyObject = (a: any): any => {
