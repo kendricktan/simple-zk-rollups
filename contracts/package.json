@@ -30,7 +30,7 @@
   },
   "scripts": {
     "ganache": "ganache-cli -l 8000000 -m helloworld",
-    "test": "jest --coverage --no-cache --runInBand",
+    "test": "jest --no-cache --runInBand --testTimeout 60000",
     "test:watch": "jest --watch --runInBand"
   }
 }

@@ -54,7 +54,7 @@ const generateTransaction = (
   balanceTree: MerkleTree,
   users: User[]
 ): Transaction => {
-  const sender: User = users[0];
+  const sender: User = randomItem(users);
   const recipient: User = randomItem(users);
 
   const amount = toWei(1);
@@ -133,7 +133,7 @@ describe("batchprocesstx.circom", () => {
     const circuit = new Circuit(circuitDef);
 
     const numberOfUsers = 10;
-    const batchSize = 4;
+    const batchSize = 8;
     const depth = 4;
 
     const arrayUsersNo = Array(numberOfUsers).fill(0);

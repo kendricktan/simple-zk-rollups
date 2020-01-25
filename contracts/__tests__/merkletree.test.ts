@@ -1,11 +1,6 @@
 import { bigInt } from "snarkjs";
 
-import {
-  sleep,
-  deployCircomLib,
-  deployHasher,
-  deployMerkleTree
-} from "./common";
+import { deployCircomLib, deployHasher, deployMerkleTree } from "./common";
 import { createMerkleTree } from "../../operator/src/utils/merkletree";
 import { multiHash, genPrivateKey } from "../../operator/src/utils/crypto";
 
@@ -23,10 +18,6 @@ describe("MerkleTree.sol", () => {
   });
 
   beforeEach(async () => {
-    while (hasherContract === undefined) {
-      await sleep(500);
-    }
-
     merkleTreeContract = await deployMerkleTree(
       depth,
       zeroValue,

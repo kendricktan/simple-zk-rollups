@@ -6,23 +6,29 @@ import {
   rollUpDef,
   deployCircomLib,
   deployHasher,
-  deployMerkleTree
+  deployMerkleTree,
+  provider
 } from "./common";
 
 import { genPrivateKey, genPublicKey } from "../../operator/src/utils/crypto";
 import { toWei, toWeiHex } from "../../operator/src/utils/helpers";
 
 describe("Rollup.sol", () => {
+  let circomLibContract;
+  let hasherContract;
   let balanceTreeContract;
   let rollUpContract;
 
   const depth = 4;
   const zeroValue = bigInt(0);
 
+  beforeAll(async () => {
+    circomLibContract = await deployCircomLib();
+    hasherContract = await deployHasher(circomLibContract.address);
+  });
+
   beforeEach(async () => {
     try {
-      const circomLibContract = await deployCircomLib();
-      const hasherContract = await deployHasher(circomLibContract.address);
       balanceTreeContract = await deployMerkleTree(
         depth,
         zeroValue,
@@ -45,7 +51,7 @@ describe("Rollup.sol", () => {
     }
   });
 
-  it("Deposit, then Withdraw", async () => {
+  it("Deposit, Withdraw, Events", async () => {
     const priv = genPrivateKey();
     const pub = genPublicKey(priv);
 
@@ -100,6 +106,82 @@ describe("Rollup.sol", () => {
     );
 
     expect(bigInt(newUserData[3].toString())).toEqual(bigInt(0));
+
+    // Filter for events
+    const depositEventFilter = rollUpContract.filters.Deposit();
+    depositEventFilter.fromBlock = 0;
+    depositEventFilter.toBlock = "latest";
+
+    const depositLogsRaw = await provider.getLogs(depositEventFilter);
+    const depositLogs = depositLogsRaw.map(x =>
+      rollUpContract.interface.parseLog(x)
+    );
+
+    expect(depositLogs.length).toEqual(1);
+    const depositLog = depositLogs[0];
+    expect(depositLog.values.balanceTreeIndex.toString()).toEqual(
+      bigInt(0).toString()
+    );
+    expect(depositLog.values.publicKeyX.toString()).toEqual(pub[0].toString());
+    expect(depositLog.values.publicKeyY.toString()).toEqual(pub[1].toString());
+    expect(depositLog.values.balance.toString()).toEqual(
+      toWei(1.25).toString()
+    );
+    expect(depositLog.values.nonce.toString()).toEqual(bigInt(0).toString());
+
+    // Withdraw events
+    const withdrawEventFilter = rollUpContract.filters.Withdraw();
+    withdrawEventFilter.fromBlock = 0;
+    withdrawEventFilter.toBlock = "latest";
+
+    const withdrawLogsRaw = await provider.getLogs(withdrawEventFilter);
+    const withdrawLogs = withdrawLogsRaw.map(x =>
+      rollUpContract.interface.parseLog(x)
+    );
+
+    // Make sure there's only one withdraw event
+    expect(withdrawLogs.length).toEqual(1);
+    const withdrawLog = withdrawLogs[0];
+    expect(withdrawLog.values.balanceTreeIndex.toString()).toEqual(
+      bigInt(0).toString()
+    );
+    expect(withdrawLog.values.publicKeyX.toString()).toEqual(pub[0].toString());
+    expect(withdrawLog.values.publicKeyY.toString()).toEqual(pub[1].toString());
+    expect(withdrawLog.values.balance.toString()).toEqual(bigInt(0).toString());
+    expect(withdrawLog.values.nonce.toString()).toEqual(bigInt(0).toString());
+  });
+
+  it("Multiple Withdraws", async () => {
+    const privA = genPrivateKey();
+    const pubA = genPublicKey(privA);
+
+    await rollUpContract.deposit(pubA[0].toString(), pubA[1].toString(), {
+      value: toWeiHex(1.0)
+    });
+
+    await rollUpContract.withdraw(
+      pubA[0].toString(),
+      pubA[1].toString(),
+      toWei(0.3).toString()
+    );
+
+    await rollUpContract.withdraw(
+      pubA[0].toString(),
+      pubA[1].toString(),
+      toWei(0.3).toString()
+    );
+
+    await rollUpContract.withdraw(
+      pubA[0].toString(),
+      pubA[1].toString(),
+      toWei(0.3).toString()
+    );
+
+    await rollUpContract.withdraw(
+      pubA[0].toString(),
+      pubA[1].toString(),
+      toWei(0.1).toString()
+    );
   });
 
   it("Multiple deposits", async () => {
@@ -151,5 +233,33 @@ describe("Rollup.sol", () => {
 
     // Nonce
     expect(userBData[4].toString()).toEqual(bigInt(0).toString());
+  });
+
+  it("Withdraws > balance, should fail", async () => {
+    const privA = genPrivateKey();
+    const pubA = genPublicKey(privA);
+
+    // Deposit 1 Eth
+    await rollUpContract.deposit(pubA[0].toString(), pubA[1].toString(), {
+      value: toWeiHex(1.0)
+    });
+
+    // Tries to withdraw 1.01 Eth
+    const failingAsyncTest = async () => {
+      await rollUpContract.withdraw(
+        pubA[0].toString(),
+        pubA[1].toString(),
+        toWei(1.01).toString()
+      );
+    };
+    await expect(failingAsyncTest()).rejects.toThrow(
+      "Withdraw amount is more than remaining balance"
+    );
+
+    await rollUpContract.withdraw(
+      pubA[0].toString(),
+      pubA[1].toString(),
+      toWei(1.0).toString()
+    );
   });
 });
