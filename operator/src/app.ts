@@ -1,5 +1,12 @@
-import { initPg, initMerkleTree } from "./db/postgres";
 import { bigInt } from "snarkjs";
+
+import { initPg, initMerkleTree } from "./db/postgres";
+import { initRedis } from "./db/redis";
+import { getRollUpContract, getContractAddresses } from "./utils/env";
+import { onEventUpdateMerkleTree } from "./routes/pubsub";
+import { sendRoute } from "./routes/send";
+import { userAddressRoute, userIndexRoute } from "./routes/users";
+
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as config from "../../zk-rollups.config";
@@ -8,14 +15,19 @@ import * as config from "../../zk-rollups.config";
 require("log-timestamp");
 
 const port = 3000;
-const balanceTreeName = "balanceTree";
-
 const app = express();
+const rollUpContract = getRollUpContract();
+
+// Middleware
 app.use(bodyParser.json());
 
-// Pub/Sub events
-
 // Routes
+app.get("/contracts", async (_, res) => {
+  res.send(getContractAddresses());
+});
+app.get("/users/index/:userIndex", userIndexRoute);
+app.get("/users/address/:userAddress", userAddressRoute);
+app.post("/send", sendRoute);
 
 // Entry point
 export const startApp = async () => {
@@ -25,11 +37,25 @@ export const startApp = async () => {
 
   console.log("Initializing postgres models....");
   await initMerkleTree(
-    balanceTreeName,
+    config.balanceTree.name,
     config.balanceTree.depth,
     bigInt(config.balanceTree.zeroValue)
   );
   console.log("Successfully initialized postgres models!");
+
+  console.log("Connecting to redis....");
+  await initRedis();
+  console.log("Successfully connected to redis!");
+
+  // Configure pub/sub events
+  rollUpContract.addListener("Deposit", onEventUpdateMerkleTree("Deposit"));
+  console.log(
+    `Listening to [Deposit] events on contract ${rollUpContract.address}`
+  );
+  rollUpContract.addListener("Withdraw", onEventUpdateMerkleTree("Withdraw"));
+  console.log(
+    `Listening to [Withdraw] events on contract ${rollUpContract.address}`
+  );
 
   app.listen(port, async () => {
     console.log(`Operator running at 127.0.0.1:${port.toString()}`);

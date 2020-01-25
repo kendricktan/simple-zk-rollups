@@ -251,6 +251,14 @@ export class MerkleTree {
       pathIndexes
     };
   }
+
+  getLeafRaw(leafIndex: number): any | null {
+    try {
+      return this.leavesRaw[leafIndex];
+    } catch {
+      return null;
+    }
+  }
 }
 
 export const createMerkleTree = (

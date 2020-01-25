@@ -30,6 +30,10 @@ export const stringify = (a: any): any => {
   return JSON.stringify(stringifyBigInts(a));
 };
 
+export const unstringify = (a: any): any => {
+  return JSON.parse(unstringifyBigInts(a));
+};
+
 export const toWei = (e: number): Wei => {
   // Convert from eth to wei
   return bigInt(ethers.utils.parseEther(e.toString()));

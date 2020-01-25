@@ -16,3 +16,9 @@ export interface PgCredentials {
   Port: string;
   Database: string;
 }
+
+export interface RedisCredentials {
+  Host: string;
+  Port: string;
+  Password: string;
+}

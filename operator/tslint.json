@@ -1,9 +1,7 @@
 {
-  "extends": [
-    "tslint-microsoft-contrib/recommended",
-    "tslint-config-prettier"
-  ],
+  "extends": ["tslint-microsoft-contrib/recommended", "tslint-config-prettier"],
   "rules": {
+    "max-func-body-length": false,
     "mocha-no-side-effect-code": false,
     "missing-jsdoc": false,
     "no-relative-imports": false,

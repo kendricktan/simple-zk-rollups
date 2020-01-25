@@ -595,7 +595,7 @@
                               "name": "addmod",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 1548,
+                              "referencedDeclaration": 3733,
                               "src": "1079:6:0",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_function_addmod_pure$_t_uint256_$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
@@ -2726,7 +2726,7 @@
                               "name": "addmod",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 1548,
+                              "referencedDeclaration": 3733,
                               "src": "1079:6:0",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_function_addmod_pure$_t_uint256_$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
@@ -4364,17 +4364,17 @@
     "version": "0.5.11+commit.c082d0b4.Emscripten.clang"
   },
   "networks": {
-    "1579908769343": {
+    "1579916234783": {
       "events": {},
       "links": {
-        "CircomLib": "0x2ADcaE80d132a156A62C52300132632e7112d391"
+        "CircomLib": "0x957Cd66Ad05e385E94f9ABD427fd307D19727BB4"
       },
-      "address": "0x2b2D60cA27bdb09ea0cfdf70D0Dd154A7e1AFf10",
-      "transactionHash": "0xd9b0c4b7e522093d2442ae09e40e11d4554a612d69e8c2a8d9752df49fed9c1b"
+      "address": "0x090e35EFd22D492bF67396CC93C6D26AE3c18D94",
+      "transactionHash": "0x03fe44e0d954b4f0c73c7a69a5a6c43f8f7a6a70cb63b403a2bfd3a2d4882182"
     }
   },
   "schemaVersion": "3.0.12",
-  "updatedAt": "2020-01-25T01:11:23.013Z",
+  "updatedAt": "2020-01-25T10:38:46.976Z",
   "devdoc": {
     "methods": {}
   },

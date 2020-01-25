@@ -9,6 +9,9 @@ import "./MerkleTree.sol";
 contract RollUp {
   using SafeMath for uint256;
 
+  // Contract owner
+  address owner;
+
   // Hasher function
   Hasher hasher;
 
@@ -45,13 +48,21 @@ contract RollUp {
   mapping(uint256 => User) balanceTreeUsers;
   mapping(uint256 => bool) isPublicKeysRegistered;
 
+  // index => hash(public key)
+  mapping(uint256 => uint256) balanceTreeKeys;
+
+  uint256 accuredFees;
+
   constructor(address balanceTreeAddress, address hasherAddress) public {
+    owner = msg.sender;
     balanceTree = MerkleTree(balanceTreeAddress);
     hasher = Hasher(hasherAddress);
+
+    accuredFees = 0;
   }
 
   // Checks if public key is registered
-  function isRegistered(uint256 publicKeyX, uint256 publicKeyY)
+  function isPublicKeyRegistered(uint256 publicKeyX, uint256 publicKeyY)
     public
     view
     returns (bool)
@@ -60,13 +71,15 @@ contract RollUp {
     return isPublicKeysRegistered[publicKeyHash];
   }
 
-  function getUserData(uint256 publicKeyX, uint256 publicKeyY)
+  function getUserKey(uint256 index) public view returns (uint256) {
+    return balanceTreeKeys[index];
+  }
+
+  function getUserData(uint256 publicKeyHash)
     public
     view
     returns (uint256, uint256, uint256, uint256, uint256)
   {
-    uint256 publicKeyHash = hasher.hashPair(publicKeyX, publicKeyY);
-
     User memory user = balanceTreeUsers[publicKeyHash];
 
     return (
@@ -76,6 +89,15 @@ contract RollUp {
       user.balance,
       user.nonce
     );
+  }
+
+  function getUserData(uint256 publicKeyX, uint256 publicKeyY)
+    public
+    view
+    returns (uint256, uint256, uint256, uint256, uint256)
+  {
+    uint256 publicKeyHash = hasher.hashPair(publicKeyX, publicKeyY);
+    return getUserData(publicKeyHash);
   }
 
   function withdrawAll(uint256 publicKeyX, uint256 publicKeyY) public {
@@ -132,12 +154,17 @@ contract RollUp {
     if (!isPublicKeysRegistered[publicKeyHash]) {
       isPublicKeysRegistered[publicKeyHash] = true;
 
+      // Saves user's public key
       user.publicKeyX = publicKeyX;
       user.publicKeyY = publicKeyY;
 
       // Saves user's index in balance tree
       user.balanceTreeLeafIndex = balanceTree.getInsertedLeavesNo();
       balanceTree.insert(leaf);
+
+      // Saves user's index in balanceTreeKeys
+      balanceTreeKeys[user.balanceTreeLeafIndex] = publicKeyHash;
+
     } else {
       // Updates balance and data in balance tree
       balanceTree.update(user.balanceTreeLeafIndex, leaf);
@@ -150,5 +177,17 @@ contract RollUp {
       user.balance,
       user.nonce
     );
+  }
+
+  function getAccuredFees() public view returns (uint256) {
+    return accuredFees;
+  }
+
+  function withdrawAccuredFees() public {
+    if (msg.sender != owner) {
+      revert("Only owner can call function");
+    }
+    msg.sender.transfer(accuredFees);
+    accuredFees = 0;
   }
 }
