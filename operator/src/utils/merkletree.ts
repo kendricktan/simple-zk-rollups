@@ -310,6 +310,11 @@ export const saveMerkleTreeToDb = async (
   });
   const mtTreeId = mtTreeRes.rows[0].id;
 
+  // Don't save any leaves if tree is empty
+  if (leafIndex === undefined && mt.nextLeafIndex === 0) {
+    return;
+  }
+
   // Current leaf index
   const selectedLeafIndex =
     leafIndex === undefined ? mt.nextLeafIndex - 1 : leafIndex;

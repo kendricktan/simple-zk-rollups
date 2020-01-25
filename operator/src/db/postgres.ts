@@ -1,6 +1,8 @@
 import { Pool } from "pg";
 
 import { getPgCredentials } from "../utils/env";
+import { SnarkBigInt } from "../types/primitives";
+import { createMerkleTree, saveMerkleTreeToDb } from "../utils/merkletree";
 
 const { User, Password, Host, Port, Database } = getPgCredentials();
 
@@ -8,7 +10,7 @@ export const pgPool = new Pool({
   connectionString: `postgres://${User}:${Password}@${Host}:${Port}/${Database}`
 });
 
-export const initDb = async () => {
+export const initPg = async () => {
   // Merkle Tree
   try {
     await pgPool.query("SELECT * FROM merkletrees LIMIT 1;");
@@ -43,5 +45,22 @@ export const initDb = async () => {
         CONSTRAINT same_tree_unique_idx UNIQUE (merkletree_id, index)
       );
     `);
+  }
+};
+
+export const initMerkleTree = async (
+  name: string,
+  depth: number,
+  zeroValue: SnarkBigInt
+) => {
+  // Create a merkle tree with the balance tree name
+  // if it doesn't exist
+  const mtTreeRes = await pgPool.query({
+    text: "SELECT * FROM merkletrees WHERE name = $1 LIMIT 1;",
+    values: [name]
+  });
+  if (mtTreeRes.rows.length === 0) {
+    const m = createMerkleTree(depth, zeroValue);
+    await saveMerkleTreeToDb(pgPool, name, m);
   }
 };

@@ -1,6 +1,6 @@
 import { bigInt } from "snarkjs";
 import { stringify, randomRange } from "../helpers";
-import { pgPool, initDb } from "../../db/postgres";
+import { pgPool, initPg } from "../../db/postgres";
 import {
   MerkleTree,
   createMerkleTree,
@@ -73,7 +73,7 @@ describe("merkletree.ts", () => {
   });
 
   it("Serialization to/from Postgres", async () => {
-    await initDb();
+    await initPg();
 
     const mtName = `TestMerkleTree${randomRange(0, 32767).toString()}`;
     const mt1 = createMerkleTree(4, bigInt(0));
