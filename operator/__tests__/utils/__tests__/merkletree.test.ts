@@ -1,14 +1,14 @@
 import { bigInt } from "snarkjs";
-import { stringify, randomRange } from "../helpers";
-import { pgPool, initPg } from "../../db/postgres";
+import { stringify, randomRange } from "../../../src/utils/helpers";
+import { pgPool, initPg } from "../../../src/db/postgres";
 import {
   MerkleTree,
   createMerkleTree,
   saveMerkleTreeToDb,
   loadMerkleTreeFromDb
-} from "../merkletree";
-import { hash, multiHash, genPrivateKey } from "../crypto";
-import { SnarkBigInt } from "../../types/primitives";
+} from "../../../src/utils/merkletree";
+import { hash, multiHash, genPrivateKey } from "../../../src/utils/crypto";
+import { SnarkBigInt } from "../../../src/types/primitives";
 
 describe("merkletree.ts", () => {
   it("Creating a merkletree", () => {

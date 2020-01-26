@@ -595,7 +595,7 @@
                               "name": "addmod",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 4448,
+                              "referencedDeclaration": 4766,
                               "src": "1027:6:0",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_function_addmod_pure$_t_uint256_$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
@@ -2726,7 +2726,7 @@
                               "name": "addmod",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 4448,
+                              "referencedDeclaration": 4766,
                               "src": "1027:6:0",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_function_addmod_pure$_t_uint256_$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
@@ -4363,18 +4363,9 @@
     "name": "solc",
     "version": "0.5.11+commit.c082d0b4.Emscripten.clang"
   },
-  "networks": {
-    "1580007541380": {
-      "events": {},
-      "links": {
-        "CircomLib": "0xdb48e11f08a92D10c59477460D3BDBA9f3B7CAe2"
-      },
-      "address": "0xc299fcc7F65f76406810B5c6d3e3826Ae71785d8",
-      "transactionHash": "0xe784f813a852980f33179c89a7f72898075fb0b1eed25b9580926103ac9ec51c"
-    }
-  },
+  "networks": {},
   "schemaVersion": "3.0.12",
-  "updatedAt": "2020-01-26T03:21:30.426Z",
+  "updatedAt": "2020-01-26T12:55:53.600Z",
   "devdoc": {
     "methods": {}
   },

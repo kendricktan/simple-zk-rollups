@@ -25,6 +25,7 @@ app.use(bodyParser.json());
 app.get("/contracts", async (_, res) => {
   res.send(getContractAddresses());
 });
+
 app.get("/users/index/:userIndex", userIndexRoute);
 app.get("/users/address/:userAddress", userAddressRoute);
 app.post("/send", sendRoute);

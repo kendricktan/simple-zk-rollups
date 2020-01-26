@@ -1,5 +1,5 @@
 module.exports = {
-  // Note you'll also need to change parameters of `./prover/circuits/main.circom`
+  // Note you'll also need to change parameters of `./prover/circuits/tx.circom`
   // for the effect to take place
   balanceTree: {
     name: "balanceTree",
@@ -15,7 +15,7 @@ module.exports = {
   processTxCircuit: {
     batchSize:
       process.env.PROCESS_TX_CIRCUIT_BATCH_SIZE === undefined
-        ? 32
+        ? 2
         : parseInt(process.env.PROCESS_TX_CIRCUIT_BATCH_SIZE)
   },
   web3: {

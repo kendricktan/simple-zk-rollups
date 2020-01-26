@@ -8,7 +8,7 @@ import {
   ecdhDecrypt,
   sign,
   verify
-} from "../crypto";
+} from "../../src/utils/crypto";
 
 describe("crypto.ts", () => {
   const privA = genPrivateKey();

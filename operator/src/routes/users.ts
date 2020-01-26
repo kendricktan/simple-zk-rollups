@@ -47,24 +47,28 @@ export const userIndexRoute = async (req, res) => {
     return;
   }
 
-  const userAddress = await rollUpContract.getUserKey(
-    parseInt(userIndex).toString()
-  );
-  const userData = await rollUpContract.getUserData(userAddress.toString());
-  const userDataArr = stringifyBigInts(userData);
-  const publicKey = unstringifyBigInts([userDataArr[1], userDataArr[2]]);
-  const address =
-    publicKey[0].toString() === "0"
-      ? "0"
-      : "0x" + multiHash(publicKey).toString(16);
+  try {
+    const userAddress = await rollUpContract.getUserKey(
+      parseInt(userIndex).toString()
+    );
+    const userData = await rollUpContract.getUserData(userAddress.toString());
+    const userDataArr = stringifyBigInts(userData);
+    const publicKey = unstringifyBigInts([userDataArr[1], userDataArr[2]]);
+    const address =
+      publicKey[0].toString() === "0"
+        ? "0"
+        : "0x" + multiHash(publicKey).toString(16);
 
-  res
-    .send({
-      index: userDataArr[0],
-      publicKey: stringifyBigInts(publicKey),
-      address,
-      balance: userDataArr[3],
-      nonce: userDataArr[4]
-    })
-    .status(200);
+    res
+      .send({
+        index: userDataArr[0],
+        publicKey: stringifyBigInts(publicKey),
+        address,
+        balance: userDataArr[3],
+        nonce: userDataArr[4]
+      })
+      .status(200);
+  } catch {
+    res.send({ error: "Invalid index" }).status(400);
+  }
 };

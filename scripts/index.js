@@ -1,7 +1,72 @@
 const { ethers } = require("ethers");
+const axios = require("axios");
+const {
+  sign,
+  genPrivateKey,
+  formatPrivKeyForBabyJub,
+  SNARK_FIELD_SIZE
+} = require("../operator/build/operator/src/utils/crypto");
+const {
+  formatTx,
+  stringifyBigInts,
+  unstringifyBigInts
+} = require("../operator/build/operator/src/utils/helpers");
 
-const { sign } = require("../operator/build/operator/src/utils/crypto");
-const { formatTx } = require("../operator/build/operator/src/utils/helpers");
+const path = require("path");
+const compiler = require("circom");
+
+const { Circuit, groth } = require("snarkjs");
+const { buildBn128 } = require("websnark");
+const {
+  binarifyWitness,
+  binarifyProvingKey
+} = require("../operator/build/operator/src/utils/binarify");
+
+const provingKey = require("../prover/build/withdrawProvingKey.json");
+const verifyingKey = require("../prover/build/withdrawVerifyingKey.json");
+
+const genWithdrawVerifierProof = async circuitInputs => {
+  const circuitDef = await compiler(
+    path.join(__dirname, "../prover/circuits/withdraw.circom")
+  );
+  const circuit = new Circuit(circuitDef);
+
+  const witness = circuit.calculateWitness(stringifyBigInts(circuitInputs));
+  const publicSignals = witness.slice(
+    1,
+    circuit.nPubInputs + circuit.nOutputs + 1
+  );
+
+  const wasmBn128 = await buildBn128();
+  const zkSnark = groth;
+
+  // Websnark to generate proof
+  const witnessBin = binarifyWitness(witness);
+  const provingKeyBin = binarifyProvingKey(provingKey);
+  const proof = await wasmBn128.groth16GenProof(witnessBin, provingKeyBin);
+  const isValid = zkSnark.isValid(
+    unstringifyBigInts(verifyingKey),
+    unstringifyBigInts(proof),
+    unstringifyBigInts(publicSignals)
+  );
+
+  if (!isValid) {
+    throw new Error("Invalid proof generated");
+  }
+
+  return {
+    proof,
+    // Verification on solidity is a bit different...
+    solidityProof: {
+      a: stringifyBigInts(proof.pi_a).slice(0, 2),
+      b: stringifyBigInts(proof.pi_b)
+        .map(x => x.reverse())
+        .slice(0, 2),
+      c: stringifyBigInts(proof.pi_c).slice(0, 2),
+      inputs: publicSignals.map(x => x.mod(SNARK_FIELD_SIZE).toString())
+    }
+  };
+};
 
 if (process.argv.length !== 3) {
   console.log(
@@ -73,19 +138,53 @@ const f = async () => {
   }
 
   if (command === "withdrawA") {
+    const { solidityProof } = await genWithdrawVerifierProof({
+      privateKey: formatPrivKeyForBabyJub(privA),
+      nullifier: genPrivateKey()
+    });
+
     await rollUpContract.withdraw(
-      pubA[0].toString(),
-      pubA[1].toString(),
-      eth2Wei(1.0).toString()
+      eth2Wei(0.95).toString(),
+      solidityProof.a,
+      solidityProof.b,
+      solidityProof.c,
+      solidityProof.inputs
     );
   }
 
   if (command === "withdrawB") {
+    const { solidityProof } = await genWithdrawVerifierProof({
+      privateKey: formatPrivKeyForBabyJub(privB),
+      nullifier: genPrivateKey()
+    });
+
     await rollUpContract.withdraw(
-      pubB[0].toString(),
-      pubB[1].toString(),
-      eth2Wei(1.0).toString()
+      eth2Wei(0.95).toString(),
+      solidityProof.a,
+      solidityProof.b,
+      solidityProof.c,
+      solidityProof.inputs
     );
+  }
+
+  if (command === "sendFromA") {
+    // TODO: Get data from operator
+    const txWithoutSig = {
+      from: 0,
+      to: 1,
+      amount: eth2Wei(0.1),
+      fee: eth2Wei(0.01),
+      nonce: 1
+    };
+    const signature = sign(privA, formatTx(txWithoutSig));
+    const tx = Object.assign({}, txWithoutSig, { signature });
+
+    const a = await axios.post(
+      "http://localhost:3000/send",
+      stringifyBigInts(tx)
+    );
+
+    console.log(a.data);
   }
 };
 

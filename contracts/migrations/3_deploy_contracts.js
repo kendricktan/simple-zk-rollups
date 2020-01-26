@@ -6,6 +6,7 @@ const RollUp = artifacts.require("RollUp");
 const CircomLib = artifacts.require("CircomLib");
 const Hasher = artifacts.require("Hasher");
 const WithdrawVerifier = artifacts.require("WithdrawVerifier");
+const TxVerifier = artifacts.require("TxVerifier");
 
 const config = require("../../zk-rollups.config");
 
@@ -26,13 +27,15 @@ module.exports = async deployer => {
 
   // Deploy withdraw verifier
   const withdrawVerifier = await deployer.deploy(WithdrawVerifier);
+  const txVerifier = await deployer.deploy(TxVerifier);
 
   // Deploy RollUp
   const rollUp = await deployer.deploy(
     RollUp,
     hasher.address,
     balanceTree.address,
-    withdrawVerifier.address
+    withdrawVerifier.address,
+    txVerifier.address
   );
 
   // Allow zk-rollups contract to call `insert` and `update` methods
@@ -43,7 +46,8 @@ module.exports = async deployer => {
   const data = JSON.stringify({
     balanceTreeAddress: balanceTree.address,
     rollUpAddress: rollUp.address,
-    withdrawVerifierAddress: withdrawVerifier.address
+    withdrawVerifierAddress: withdrawVerifier.address,
+    txVerifierAddress: txVerifier.address
   });
 
   const buildDir = path.resolve(__dirname, "../build");

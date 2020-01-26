@@ -23,6 +23,7 @@ export const circomLibDef = require("../build/contracts/CircomLib.json");
 export const hasherDef = require("../build/contracts/Hasher.json");
 export const merkletreeDef = require("../build/contracts/MerkleTree.json");
 export const withdrawVerifierDef = require("../build/contracts/WithdrawVerifier.json");
+export const txVerifierDef = require("../build/contracts/TxVerifier.json");
 export const rollUpDef = require("../build/contracts/RollUp.json");
 
 export const deployCircomLib = async (): Promise<ethers.Contract> => {
@@ -63,6 +64,19 @@ export const deployWithdrawVerifier = async (): Promise<ethers.Contract> => {
   await withdrawVerifierContract.deployed();
 
   return withdrawVerifierContract;
+};
+
+export const deployTxVerifier = async (): Promise<ethers.Contract> => {
+  const txVerifierFactory = new ethers.ContractFactory(
+    txVerifierDef.abi,
+    txVerifierDef.bytecode,
+    wallet
+  );
+
+  const txVerifierContract = await txVerifierFactory.deploy();
+  await txVerifierContract.deployed();
+
+  return txVerifierContract;
 };
 
 export const deployMerkleTree = async (

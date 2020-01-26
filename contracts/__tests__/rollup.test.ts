@@ -8,6 +8,7 @@ import {
   deployHasher,
   deployMerkleTree,
   deployWithdrawVerifier,
+  deployTxVerifier,
   provider
 } from "./common";
 
@@ -24,6 +25,7 @@ describe("Rollup.sol", () => {
   let circomLibContract;
   let hasherContract;
   let withdrawVerifierContract;
+  let txVerifierContract;
   let balanceTreeContract;
   let rollUpContract;
 
@@ -34,6 +36,7 @@ describe("Rollup.sol", () => {
     circomLibContract = await deployCircomLib();
     hasherContract = await deployHasher(circomLibContract.address);
     withdrawVerifierContract = await deployWithdrawVerifier();
+    txVerifierContract = await deployTxVerifier();
 
     done();
   });
@@ -54,7 +57,8 @@ describe("Rollup.sol", () => {
       rollUpContract = await rollUpFactory.deploy(
         hasherContract.address,
         balanceTreeContract.address,
-        withdrawVerifierContract.address
+        withdrawVerifierContract.address,
+        txVerifierContract.address
       );
       await rollUpContract.deployed();
       await balanceTreeContract.whitelistAddress(rollUpContract.address);

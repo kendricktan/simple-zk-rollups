@@ -336,7 +336,7 @@
         "id": 169,
         "nodeType": "ImportDirective",
         "scope": 774,
-        "sourceUnit": 3163,
+        "sourceUnit": 3469,
         "src": "914:25:1",
         "symbolAliases": [],
         "unitAlias": ""
@@ -350,10 +350,10 @@
               "id": 170,
               "name": "Whitelist",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 3162,
+              "referencedDeclaration": 3468,
               "src": "964:9:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_Whitelist_$3162",
+                "typeIdentifier": "t_contract$_Whitelist_$3468",
                 "typeString": "contract Whitelist"
               }
             },
@@ -363,9 +363,9 @@
           }
         ],
         "contractDependencies": [
-          3162,
-          4144,
-          4445
+          3468,
+          4462,
+          4763
         ],
         "contractKind": "contract",
         "documentation": null,
@@ -373,9 +373,9 @@
         "id": 773,
         "linearizedBaseContracts": [
           773,
-          3162,
-          4445,
-          4144
+          3468,
+          4763,
+          4462
         ],
         "name": "MerkleTree",
         "nodeType": "ContractDefinition",
@@ -2264,10 +2264,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        4463,
-                        4464
+                        4781,
+                        4782
                       ],
-                      "referencedDeclaration": 4464,
+                      "referencedDeclaration": 4782,
                       "src": "2485:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -3969,7 +3969,7 @@
                   "name": "whitelisted",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 3133,
+                  "referencedDeclaration": 3439,
                   "src": "2467:11:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_modifier$__$",
@@ -4116,10 +4116,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        4463,
-                        4464
+                        4781,
+                        4782
                       ],
-                      "referencedDeclaration": 4464,
+                      "referencedDeclaration": 4782,
                       "src": "3514:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -5873,10 +5873,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        4463,
-                        4464
+                        4781,
+                        4782
                       ],
-                      "referencedDeclaration": 4464,
+                      "referencedDeclaration": 4782,
                       "src": "4369:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -7328,7 +7328,7 @@
                   "name": "whitelisted",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 3133,
+                  "referencedDeclaration": 3439,
                   "src": "3496:11:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_modifier$__$",
@@ -8027,7 +8027,7 @@
         "id": 169,
         "nodeType": "ImportDirective",
         "scope": 774,
-        "sourceUnit": 3163,
+        "sourceUnit": 3469,
         "src": "914:25:1",
         "symbolAliases": [],
         "unitAlias": ""
@@ -8041,10 +8041,10 @@
               "id": 170,
               "name": "Whitelist",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 3162,
+              "referencedDeclaration": 3468,
               "src": "964:9:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_Whitelist_$3162",
+                "typeIdentifier": "t_contract$_Whitelist_$3468",
                 "typeString": "contract Whitelist"
               }
             },
@@ -8054,9 +8054,9 @@
           }
         ],
         "contractDependencies": [
-          3162,
-          4144,
-          4445
+          3468,
+          4462,
+          4763
         ],
         "contractKind": "contract",
         "documentation": null,
@@ -8064,9 +8064,9 @@
         "id": 773,
         "linearizedBaseContracts": [
           773,
-          3162,
-          4445,
-          4144
+          3468,
+          4763,
+          4462
         ],
         "name": "MerkleTree",
         "nodeType": "ContractDefinition",
@@ -9955,10 +9955,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        4463,
-                        4464
+                        4781,
+                        4782
                       ],
-                      "referencedDeclaration": 4464,
+                      "referencedDeclaration": 4782,
                       "src": "2485:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -11660,7 +11660,7 @@
                   "name": "whitelisted",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 3133,
+                  "referencedDeclaration": 3439,
                   "src": "2467:11:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_modifier$__$",
@@ -11807,10 +11807,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        4463,
-                        4464
+                        4781,
+                        4782
                       ],
-                      "referencedDeclaration": 4464,
+                      "referencedDeclaration": 4782,
                       "src": "3514:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -13564,10 +13564,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        4463,
-                        4464
+                        4781,
+                        4782
                       ],
-                      "referencedDeclaration": 4464,
+                      "referencedDeclaration": 4782,
                       "src": "4369:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -15019,7 +15019,7 @@
                   "name": "whitelisted",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 3133,
+                  "referencedDeclaration": 3439,
                   "src": "3496:11:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_modifier$__$",
@@ -15685,16 +15685,9 @@
     "name": "solc",
     "version": "0.5.11+commit.c082d0b4.Emscripten.clang"
   },
-  "networks": {
-    "1580007541380": {
-      "events": {},
-      "links": {},
-      "address": "0xce4665cFb1E22b6ff83f44112CF5DD745Db015F3",
-      "transactionHash": "0x16f2533f07a5674f32f33a0a8bd96205d92852aabf59aba7b8eb73f02c82a4f9"
-    }
-  },
+  "networks": {},
   "schemaVersion": "3.0.12",
-  "updatedAt": "2020-01-26T03:21:30.415Z",
+  "updatedAt": "2020-01-26T12:55:53.601Z",
   "devdoc": {
     "methods": {
       "isOwner()": {

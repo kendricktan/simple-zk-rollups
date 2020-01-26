@@ -5,7 +5,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./Hasher.sol";
 import "./Whitelist.sol";
 import "./MerkleTree.sol";
-import "./WithdrawVerifier.sol";
+import {WithdrawVerifier as WithdrawVerifier} from "./WithdrawVerifier.sol";
+import {TxVerifier as TxVerifier} from "./TxVerifier.sol";
 
 contract RollUp {
   using SafeMath for uint256;
@@ -22,6 +23,7 @@ contract RollUp {
 
   // ZK Proofs
   WithdrawVerifier withdrawVerifier;
+  TxVerifier txVerifier;
 
   // Deposit event
   event Deposit(
@@ -41,6 +43,8 @@ contract RollUp {
     uint256 nonce
   );
 
+  event RollUpProcessed(uint256 newBalanceTreeRoot);
+
   // Registered users
   struct User {
     uint256 balanceTreeLeafIndex;
@@ -49,7 +53,6 @@ contract RollUp {
     uint256 balance;
     uint256 nonce;
   }
-  mapping(uint256 => address) balanceTreeOwners;
   mapping(uint256 => User) balanceTreeUsers;
   mapping(uint256 => bool) isPublicKeysRegistered;
   mapping(uint256 => bool) usedNullifiers;
@@ -62,15 +65,99 @@ contract RollUp {
   constructor(
     address hasherAddress,
     address balanceTreeAddress,
-    address withdrawVerifierAddress
+    address withdrawVerifierAddress,
+    address txVerifierAddress
   ) public {
     owner = msg.sender;
 
     hasher = Hasher(hasherAddress);
     balanceTree = MerkleTree(balanceTreeAddress);
     withdrawVerifier = WithdrawVerifier(withdrawVerifierAddress);
+    txVerifier = TxVerifier(txVerifierAddress);
 
     accuredFees = 0;
+  }
+
+  function rollUp(
+    uint256[2] memory a,
+    uint256[2][2] memory b,
+    uint256[2] memory c,
+    uint256[73] memory input
+  ) public {
+    // TODO: Check if current merkle tree is
+    // equal to supplied merkle tree
+    uint256 balanceTreeRoot = input[1];
+    // uint256 newBalanceTreeRoot = input[1];
+
+    if (balanceTree.getRoot() != balanceTreeRoot) {
+      revert("Proof not valid for current tree");
+    }
+
+    if (!txVerifier.verifyProof(a, b, c, input)) {
+      revert("Invalid roll up proofs");
+    }
+
+    // Transaction one
+    uint256 from;
+    uint256 to;
+    uint256 amount;
+    uint256 fee;
+    uint256 nonce;
+    uint256 curOffset;
+
+    uint256 senderLeaf;
+    uint256 recipientLeaf;
+
+    uint256 senderPublicKeyHash;
+    uint256 recipientPublicKeyHash;
+
+    uint256 txDataOffset = 3;
+    uint256 txDataLength = 8;
+    uint256 batchSize = 2;
+
+    for (uint256 i = 0; i < batchSize; i++) {
+      curOffset = txDataOffset + (txDataLength * i);
+
+      from = input[curOffset];
+      to = input[curOffset + 1];
+      amount = input[curOffset + 2];
+      fee = input[curOffset + 3];
+      nonce = input[curOffset + 4];
+
+      // Update user data
+      senderPublicKeyHash = balanceTreeKeys[from];
+      recipientPublicKeyHash = balanceTreeKeys[to];
+
+      User storage sender = balanceTreeUsers[senderPublicKeyHash];
+      sender.balance -= amount;
+      sender.balance -= fee;
+      sender.nonce = nonce;
+
+      User storage recipient = balanceTreeUsers[recipientPublicKeyHash];
+      recipient.balance += amount;
+
+      accuredFees += fee;
+
+      // Update merkle tree leaf
+      senderLeaf = hasher.hashBalanceTreeLeaf(
+        sender.publicKeyX,
+        sender.publicKeyY,
+        sender.balance,
+        sender.nonce
+      );
+
+      recipientLeaf = hasher.hashBalanceTreeLeaf(
+        recipient.publicKeyX,
+        recipient.publicKeyY,
+        recipient.balance,
+        recipient.nonce
+      );
+
+      balanceTree.update(sender.balanceTreeLeafIndex, senderLeaf);
+      balanceTree.update(recipient.balanceTreeLeafIndex, recipientLeaf);
+    }
+
+    emit RollUpProcessed(balanceTree.getRoot());
   }
 
   // Checks if public key is registered

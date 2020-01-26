@@ -85,7 +85,7 @@ export const sendRoute = async (req, res) => {
   }
 
   // Get sender data
-  const senderData: BalanceTreeLeafData = m.getLeafRaw(from);
+  const senderData: BalanceTreeLeafData = m.getLeafRaw(bfrom);
 
   // If sender is trying to send > balance, ignore
   if (senderData.balance < bamount) {
@@ -98,7 +98,8 @@ export const sendRoute = async (req, res) => {
   }
 
   // If fee isn't at least 0.3% of the balance amount, ignore
-  if (bamount.mul(0.003) > bfee) {
+  const minFee = bamount.div(bigInt(1000)).mul(bigInt(3));
+  if (minFee.gt(bfee)) {
     res
       .send({
         error: `Fee needs to be at least 0.3% of the amount to be sent`
@@ -108,7 +109,7 @@ export const sendRoute = async (req, res) => {
   }
 
   // Validate nonce
-  if (bnonce != senderData.nonce + 1) {
+  if (bnonce != parseInt(senderData.nonce.toString()) + 1) {
     res
       .send({
         error: `Expected nonce of ${senderData.nonce +
@@ -145,5 +146,5 @@ export const sendRoute = async (req, res) => {
   await redisSet(lastInsertedTx, stringify(tx));
   await redisSet(redisLastInsertedTxKey, lastInsertedTx + 1);
 
-  res.send({ status: "Successfully submitted transaction" }).status(201);
+  res.send({ status: "Transaction accepted" }).status(201);
 };

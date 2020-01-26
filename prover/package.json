@@ -27,16 +27,16 @@
     "typescript": "^3.7.5"
   },
   "scripts": {
-    "circuit:compile": "yarn circuit:tx:compile",
-    "circuit:setup": "yarn circuit:tx:setup",
-    "circuit:generateverifier": "yarn circuit:tx:generateverifier",
+    "circuit:compile": "yarn circuit:tx:compile && yarn circuit:withdraw:compile",
+    "circuit:setup": "yarn circuit:tx:setup && yarn circuit:withdraw:setup",
+    "circuit:generateverifier": "yarn circuit:tx:generateverifier && yarn circuit:withdraw:generateverifier",
     "circuit:withdraw:compile": "mkdir -p build && circom circuits/withdraw.circom -o build/withdraw.json",
     "circuit:withdraw:setup": "snarkjs setup --protocol groth -c build/withdraw.json --pk build/withdrawProvingKey.json --vk build/withdrawVerifyingKey.json",
     "circuit:withdraw:generateverifier": "snarkjs generateverifier --pk build/withdrawProvingKey.json --vk build/withdrawVerifyingKey.json -v ../contracts/contracts/WithdrawVerifier.sol && sed -i.bak -e \"s/Verifier/WithdrawVerifier/g\" -- ../contracts/contracts/WithdrawVerifier.sol && rm -- ../contracts/contracts/WithdrawVerifier.sol.bak",
     "circuit:tx:compile": "mkdir -p build && circom circuits/tx.circom -o build/tx.json",
     "circuit:tx:setup": "snarkjs setup --protocol groth -c build/tx.json --pk build/txProvingKey.json --vk build/txVerifyingKey.json",
     "circuit:tx:generateverifier": "snarkjs generateverifier --pk build/txProvingKey.json --vk build/txVerifyingKey.json -v ../contracts/contracts/TxVerifier.sol && sed -i.bak -e \"s/Verifier/TxVerifier/g\" -- ../contracts/contracts/TxVerifier.sol && rm -- ../contracts/contracts/TxVerifier.sol.bak",
-    "test": "jest --no-cache --testTimeout 60000 --detectOpenHandles",
+    "test": "jest --no-cache --testTimeout 60000",
     "test:watch": "jest --watch"
   }
 }
