@@ -2,7 +2,8 @@ import * as path from "path";
 import * as compiler from "circom";
 
 import { Circuit, bigInt } from "snarkjs";
-import { Transaction, SnarkBigInt } from "../../operator/src/types/primitives";
+import { SnarkBigInt } from "../../operator/src/types/primitives";
+import { Transaction } from "../../operator/src/types/models";
 import {
   toWei,
   formatTx,

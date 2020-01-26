@@ -16,6 +16,7 @@
     "noUnusedParameters": true,
     "noImplicitAny": false,
     "noImplicitThis": false,
+    "resolveJsonModule": true,
     "strictNullChecks": false,
     "baseUrl": "."
   },

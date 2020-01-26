@@ -22,9 +22,10 @@ export const wallet = new ethers.Wallet(ganacheConfig.privateKey, provider);
 export const circomLibDef = require("../build/contracts/CircomLib.json");
 export const hasherDef = require("../build/contracts/Hasher.json");
 export const merkletreeDef = require("../build/contracts/MerkleTree.json");
+export const withdrawVerifierDef = require("../build/contracts/WithdrawVerifier.json");
 export const rollUpDef = require("../build/contracts/RollUp.json");
 
-export const deployCircomLib = async () => {
+export const deployCircomLib = async (): Promise<ethers.Contract> => {
   const circomLibFactory = new ethers.ContractFactory(
     circomLibDef.abi,
     circomLibDef.bytecode,
@@ -37,7 +38,9 @@ export const deployCircomLib = async () => {
   return circomLibContract;
 };
 
-export const deployHasher = async (circomLibAddress: string) => {
+export const deployHasher = async (
+  circomLibAddress: string
+): Promise<ethers.Contract> => {
   const hasherFactory = new ethers.ContractFactory(
     hasherDef.abi,
     linkLibraries(hasherDef.bytecode, "CircomLib", circomLibAddress),
@@ -49,21 +52,35 @@ export const deployHasher = async (circomLibAddress: string) => {
   return hasherContract;
 };
 
+export const deployWithdrawVerifier = async (): Promise<ethers.Contract> => {
+  const withdrawVerifierFactory = new ethers.ContractFactory(
+    withdrawVerifierDef.abi,
+    withdrawVerifierDef.bytecode,
+    wallet
+  );
+
+  const withdrawVerifierContract = await withdrawVerifierFactory.deploy();
+  await withdrawVerifierContract.deployed();
+
+  return withdrawVerifierContract;
+};
+
 export const deployMerkleTree = async (
   depth: number,
   zeroValue: number,
   hasherAddress: string
-) => {
+): Promise<ethers.Contract> => {
   const merkleTreeFactory = new ethers.ContractFactory(
     merkletreeDef.abi,
     merkletreeDef.bytecode,
     wallet
   );
   const merkleTreeContract = await merkleTreeFactory.deploy(
-    depth,
+    depth.toString(),
     zeroValue.toString(),
     hasherAddress
   );
+
   await merkleTreeContract.deployed();
   await merkleTreeContract.whitelistAddress(wallet.address);
 

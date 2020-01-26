@@ -20,6 +20,6 @@ services:
       retries: 5
   ganache:
     image: trufflesuite/ganache-cli:v6.7.0
-    entrypoint: /bin/sh -c "npx ganache-cli -l 8000000 -m helloworld"
+    entrypoint: /bin/sh -c "npx ganache-cli -l 8000000 -m helloworld -e 32767"
     ports:
       - "8545:8545"

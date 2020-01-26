@@ -78,10 +78,9 @@ export const formatPrivKeyForBabyJub = (privKey: PrivateKey): PrivateKey => {
 export const genPublicKey = (privKey: PrivateKey): Publickey => {
   assert(privKey < SNARK_FIELD_SIZE);
 
-  return babyJub.mulPointEscalar(
-    babyJub.Base8,
-    formatPrivKeyForBabyJub(privKey)
-  );
+  return babyJub
+    .mulPointEscalar(babyJub.Base8, formatPrivKeyForBabyJub(privKey))
+    .map(x => x.mod(SNARK_FIELD_SIZE));
 };
 
 export const ecdh = (priv: PrivateKey, pub: Publickey): PrivateKey => {

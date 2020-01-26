@@ -125,15 +125,15 @@ const processTransaction = (
 };
 
 describe("batchprocesstx.circom", () => {
-  it("BatchProcessTx(4, 4)", async () => {
+  it("BatchProcessTx(4, 5)", async () => {
     const circuitDef = await compiler(
       path.join(__dirname, "circuits", "batchprocesstx_test.circom")
     );
     const circuit = new Circuit(circuitDef);
 
     const numberOfUsers = 10;
-    const batchSize = 8;
-    const depth = 4;
+    const batchSize = 4;
+    const depth = 5;
 
     const arrayUsersNo = Array(numberOfUsers).fill(0);
     const arrayBatchSize = Array(batchSize).fill(0);

@@ -5,6 +5,7 @@ const MerkleTree = artifacts.require("MerkleTree");
 const RollUp = artifacts.require("RollUp");
 const CircomLib = artifacts.require("CircomLib");
 const Hasher = artifacts.require("Hasher");
+const WithdrawVerifier = artifacts.require("WithdrawVerifier");
 
 const config = require("../../zk-rollups.config");
 
@@ -23,11 +24,15 @@ module.exports = async deployer => {
     hasher.address
   );
 
+  // Deploy withdraw verifier
+  const withdrawVerifier = await deployer.deploy(WithdrawVerifier);
+
   // Deploy RollUp
   const rollUp = await deployer.deploy(
     RollUp,
+    hasher.address,
     balanceTree.address,
-    hasher.address
+    withdrawVerifier.address
   );
 
   // Allow zk-rollups contract to call `insert` and `update` methods
@@ -37,7 +42,8 @@ module.exports = async deployer => {
   // Saves Deployed Addresses to a JSON file
   const data = JSON.stringify({
     balanceTreeAddress: balanceTree.address,
-    rollUpAddress: rollUp.address
+    rollUpAddress: rollUp.address,
+    withdrawVerifierAddress: withdrawVerifier.address
   });
 
   const buildDir = path.resolve(__dirname, "../build");

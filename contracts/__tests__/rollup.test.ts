@@ -7,15 +7,23 @@ import {
   deployCircomLib,
   deployHasher,
   deployMerkleTree,
+  deployWithdrawVerifier,
   provider
 } from "./common";
 
-import { genPrivateKey, genPublicKey } from "../../operator/src/utils/crypto";
+import { genWithdrawVerifierProof } from "../../operator/src/snarks/withdraw";
+import {
+  genPrivateKey,
+  genPublicKey,
+  formatPrivKeyForBabyJub,
+  multiHash
+} from "../../operator/src/utils/crypto";
 import { toWei, toWeiHex } from "../../operator/src/utils/helpers";
 
 describe("Rollup.sol", () => {
   let circomLibContract;
   let hasherContract;
+  let withdrawVerifierContract;
   let balanceTreeContract;
   let rollUpContract;
 
@@ -25,6 +33,7 @@ describe("Rollup.sol", () => {
   beforeAll(async () => {
     circomLibContract = await deployCircomLib();
     hasherContract = await deployHasher(circomLibContract.address);
+    withdrawVerifierContract = await deployWithdrawVerifier();
   });
 
   beforeEach(async () => {
@@ -41,8 +50,9 @@ describe("Rollup.sol", () => {
         wallet
       );
       rollUpContract = await rollUpFactory.deploy(
+        hasherContract.address,
         balanceTreeContract.address,
-        hasherContract.address
+        withdrawVerifierContract.address
       );
       await rollUpContract.deployed();
       await balanceTreeContract.whitelistAddress(rollUpContract.address);
@@ -51,12 +61,13 @@ describe("Rollup.sol", () => {
     }
   });
 
-  it("Deposit, Withdraw, Events", async () => {
+  it("Deposit, Withdraw, Events", async done => {
     const priv = genPrivateKey();
     const pub = genPublicKey(priv);
+    const pubHash = multiHash(pub);
 
     // User is not registered
-    const isNotRegistered = await rollUpContract.isRegistered(
+    const isNotRegistered = await rollUpContract.isPublicKeyRegistered(
       pub[0].toString(),
       pub[1].toString()
     );
@@ -67,43 +78,39 @@ describe("Rollup.sol", () => {
       value: toWeiHex(1.25)
     });
 
-    const isRegistered = await rollUpContract.isRegistered(
+    const isPublicKeyRegistered = await rollUpContract.isPublicKeyRegistered(
       pub[0].toString(),
       pub[1].toString()
     );
-    expect(isRegistered).toEqual(true);
+    expect(isPublicKeyRegistered).toEqual(true);
 
-    const userData = await rollUpContract.getUserData(
-      pub[0].toString(),
-      pub[1].toString()
-    );
+    const userData = await rollUpContract.getUserData(pubHash.toString());
 
-    // Leaf Index
     expect(userData[0].toString()).toEqual(bigInt(0).toString());
-
-    // Public Key
     expect(userData[1].toString()).toEqual(pub[0].toString());
     expect(userData[2].toString()).toEqual(pub[1].toString());
-
-    // Balance
     expect(bigInt(userData[3].toString())).toEqual(toWei(1.25));
-
-    // Nonce
     expect(userData[4].toString()).toEqual(bigInt(0).toString());
 
     // Withdraw
     const preWithdrawBalance = await wallet.getBalance();
-    await rollUpContract.withdrawAll(pub[0].toString(), pub[1].toString());
+    const { solidityProof } = await genWithdrawVerifierProof({
+      privateKey: formatPrivKeyForBabyJub(priv),
+      nullifier: genPrivateKey()
+    });
+    await rollUpContract.withdrawAll(
+      solidityProof.a,
+      solidityProof.b,
+      solidityProof.c,
+      solidityProof.inputs
+    );
     const postWithdrawBalance = await wallet.getBalance();
 
     expect(bigInt(postWithdrawBalance.toString())).toBeGreaterThan(
       bigInt(preWithdrawBalance.toString())
     );
 
-    const newUserData = await rollUpContract.getUserData(
-      pub[0].toString(),
-      pub[1].toString()
-    );
+    const newUserData = await rollUpContract.getUserData(pubHash.toString());
 
     expect(bigInt(newUserData[3].toString())).toEqual(bigInt(0));
 
@@ -149,47 +156,96 @@ describe("Rollup.sol", () => {
     expect(withdrawLog.values.publicKeyY.toString()).toEqual(pub[1].toString());
     expect(withdrawLog.values.balance.toString()).toEqual(bigInt(0).toString());
     expect(withdrawLog.values.nonce.toString()).toEqual(bigInt(0).toString());
+
+    done();
   });
 
-  it("Multiple Withdraws", async () => {
-    const privA = genPrivateKey();
-    const pubA = genPublicKey(privA);
+  it("Multiple Withdraws", async done => {
+    const priv = genPrivateKey();
+    const pub = genPublicKey(priv);
 
-    await rollUpContract.deposit(pubA[0].toString(), pubA[1].toString(), {
+    await rollUpContract.deposit(pub[0].toString(), pub[1].toString(), {
       value: toWeiHex(1.0)
     });
 
-    await rollUpContract.withdraw(
-      pubA[0].toString(),
-      pubA[1].toString(),
-      toWei(0.3).toString()
-    );
+    const proof1 = await genWithdrawVerifierProof({
+      privateKey: formatPrivKeyForBabyJub(priv),
+      nullifier: genPrivateKey()
+    });
 
     await rollUpContract.withdraw(
-      pubA[0].toString(),
-      pubA[1].toString(),
-      toWei(0.3).toString()
+      toWei(0.3).toString(),
+      proof1.solidityProof.a,
+      proof1.solidityProof.b,
+      proof1.solidityProof.c,
+      proof1.solidityProof.inputs
     );
 
-    await rollUpContract.withdraw(
-      pubA[0].toString(),
-      pubA[1].toString(),
-      toWei(0.3).toString()
+    // Now try and change nullifier (should fail)
+    const failingWithdraw1 = async () => {
+      proof1.solidityProof.inputs[2] = genPrivateKey().toString();
+
+      await rollUpContract.withdraw(
+        toWei(0.3).toString(),
+        proof1.solidityProof.a,
+        proof1.solidityProof.b,
+        proof1.solidityProof.c,
+        proof1.solidityProof.inputs
+      );
+    };
+    expect(failingWithdraw1()).rejects.toThrow(
+      "Unauthorized to withdraw funds"
     );
 
+    const proof2 = await genWithdrawVerifierProof({
+      privateKey: formatPrivKeyForBabyJub(priv),
+      nullifier: genPrivateKey()
+    });
+
     await rollUpContract.withdraw(
-      pubA[0].toString(),
-      pubA[1].toString(),
-      toWei(0.1).toString()
+      toWei(0.3).toString(),
+      proof2.solidityProof.a,
+      proof2.solidityProof.b,
+      proof2.solidityProof.c,
+      proof2.solidityProof.inputs
     );
+
+    // Try and reuse nullifier
+    const failingWithdraw2 = async () => {
+      await rollUpContract.withdraw(
+        toWei(0.3).toString(),
+        proof2.solidityProof.a,
+        proof2.solidityProof.b,
+        proof2.solidityProof.c,
+        proof2.solidityProof.inputs
+      );
+    };
+    expect(failingWithdraw2()).rejects.toThrow("Nullifier has been used");
+
+    const proof3 = await genWithdrawVerifierProof({
+      privateKey: formatPrivKeyForBabyJub(priv),
+      nullifier: genPrivateKey()
+    });
+
+    await rollUpContract.withdraw(
+      toWei(0.3).toString(),
+      proof3.solidityProof.a,
+      proof3.solidityProof.b,
+      proof3.solidityProof.c,
+      proof3.solidityProof.inputs
+    );
+
+    done();
   });
 
-  it("Multiple deposits", async () => {
+  it("Multiple deposits", async done => {
     const privA = genPrivateKey();
     const pubA = genPublicKey(privA);
+    const pubAHash = multiHash(pubA);
 
     const privB = genPrivateKey();
     const pubB = genPublicKey(privB);
+    const pubBHash = multiHash(pubB);
 
     // User A deposits 1 eth
     await rollUpContract.deposit(pubA[0].toString(), pubA[1].toString(), {
@@ -207,49 +263,45 @@ describe("Rollup.sol", () => {
     });
 
     // Get User A Data
-    const userAData = await rollUpContract.getUserData(
-      pubA[0].toString(),
-      pubA[1].toString()
-    );
+    const userAData = await rollUpContract.getUserData(pubAHash.toString());
 
     // Expect balance
     expect(bigInt(userAData[3].toString())).toEqual(toWei(1.5));
 
     // Get user data
-    const userBData = await rollUpContract.getUserData(
-      pubB[0].toString(),
-      pubB[1].toString()
-    );
+    const userBData = await rollUpContract.getUserData(pubBHash.toString());
 
-    // Leaf Index
-    expect(userBData[0].toString()).toEqual(bigInt(1).toString());
-
-    // Public Key
+    expect(userBData[0].toString()).toEqual(bigInt(1).toString()); // leaf index
     expect(userBData[1].toString()).toEqual(pubB[0].toString());
     expect(userBData[2].toString()).toEqual(pubB[1].toString());
+    expect(bigInt(userBData[3].toString())).toEqual(toWei(2.0)); // balance
+    expect(userBData[4].toString()).toEqual(bigInt(0).toString()); // nonce
 
-    // Balance
-    expect(bigInt(userBData[3].toString())).toEqual(toWei(2.0));
-
-    // Nonce
-    expect(userBData[4].toString()).toEqual(bigInt(0).toString());
+    done();
   });
 
-  it("Withdraws > balance, should fail", async () => {
-    const privA = genPrivateKey();
-    const pubA = genPublicKey(privA);
+  it("Withdraws > balance, should fail", async done => {
+    const priv = genPrivateKey();
+    const pub = genPublicKey(priv);
+
+    const { solidityProof } = await genWithdrawVerifierProof({
+      privateKey: formatPrivKeyForBabyJub(priv),
+      nullifier: genPrivateKey()
+    });
 
     // Deposit 1 Eth
-    await rollUpContract.deposit(pubA[0].toString(), pubA[1].toString(), {
+    await rollUpContract.deposit(pub[0].toString(), pub[1].toString(), {
       value: toWeiHex(1.0)
     });
 
     // Tries to withdraw 1.01 Eth
     const failingAsyncTest = async () => {
       await rollUpContract.withdraw(
-        pubA[0].toString(),
-        pubA[1].toString(),
-        toWei(1.01).toString()
+        toWei(1.01).toString(),
+        solidityProof.a,
+        solidityProof.b,
+        solidityProof.c,
+        solidityProof.inputs
       );
     };
     await expect(failingAsyncTest()).rejects.toThrow(
@@ -257,9 +309,13 @@ describe("Rollup.sol", () => {
     );
 
     await rollUpContract.withdraw(
-      pubA[0].toString(),
-      pubA[1].toString(),
-      toWei(1.0).toString()
+      toWei(0.9).toString(),
+      solidityProof.a,
+      solidityProof.b,
+      solidityProof.c,
+      solidityProof.inputs
     );
+
+    done();
   });
 });

@@ -5532,6 +5532,13 @@ walker@^1.0.7, walker@~1.0.5:
   dependencies:
     makeerror "1.0.x"
 
+wasmbuilder@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/wasmbuilder/-/wasmbuilder-0.0.8.tgz#f19e175a32ef1e09707e6fbad18f3fd07473ef35"
+  integrity sha512-d63cIsDmHnybA5hTlRRLadgys5r3Tl4W8SbcBRh13FauEPOo48dqjgzdL1xefpZkpKKybDRlFqgm+9cX04B3+w==
+  dependencies:
+    big-integer "^1.6.43"
+
 web3-bzz@1.2.4:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/web3-bzz/-/web3-bzz-1.2.4.tgz#a4adb7a8cba3d260de649bdb1f14ed359bfb3821"
