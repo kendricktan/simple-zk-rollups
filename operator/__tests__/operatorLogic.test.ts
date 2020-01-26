@@ -239,8 +239,14 @@ describe("OperatorLogic.ts", () => {
       multiHash(pubB).toString()
     );
 
-    console.log(stringifyBigInts(userAData));
-    console.log(stringifyBigInts(userBData));
+    expect(userAData[4].toString()).toEqual((2).toString());
+    expect(bigInt(userAData[3].toString())).toEqual(toWei(0.57));
+
+    expect(bigInt(userBData[3].toString())).toEqual(toWei(1.4));
+
+    // Get accurred fees
+    const accuredFees = await rollUpContract.getAccuredFees();
+    expect(accuredFees.toString()).toEqual(toWei(0.03).toString());
 
     done();
   });
