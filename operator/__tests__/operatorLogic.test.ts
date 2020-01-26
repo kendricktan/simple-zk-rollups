@@ -21,8 +21,7 @@ import {
   formatTx,
   hashBalanceTreeLeaf,
   copyObject,
-  stringifyBigInts,
-  fromWei
+  stringifyBigInts
 } from "../src/utils/helpers";
 import * as config from "../../zk-rollups.config";
 import { createMerkleTree } from "../src/utils/merkletree";
