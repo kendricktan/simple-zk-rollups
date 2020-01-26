@@ -34,7 +34,7 @@
   },
   "scripts": {
     "ganache": "ganache-cli -l 8000000 -m helloworld",
-    "test": "truffle compile && jest --no-cache --runInBand --testTimeout 60000",
+    "test": "truffle compile && jest --no-cache --runInBand --testTimeout 60000 --forceExit",
     "test:watch": "jest --watch --runInBand"
   }
 }

@@ -30,13 +30,15 @@ describe("Rollup.sol", () => {
   const depth = 4;
   const zeroValue = bigInt(0);
 
-  beforeAll(async () => {
+  beforeAll(async done => {
     circomLibContract = await deployCircomLib();
     hasherContract = await deployHasher(circomLibContract.address);
     withdrawVerifierContract = await deployWithdrawVerifier();
+
+    done();
   });
 
-  beforeEach(async () => {
+  beforeEach(async done => {
     try {
       balanceTreeContract = await deployMerkleTree(
         depth,
@@ -59,6 +61,8 @@ describe("Rollup.sol", () => {
     } catch (e) {
       console.log(e);
     }
+
+    done();
   });
 
   it("Deposit, Withdraw, Events", async done => {

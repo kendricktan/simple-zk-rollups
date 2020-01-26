@@ -12,20 +12,24 @@ describe("MerkleTree.sol", () => {
   const depth = 4;
   const zeroValue = bigInt(0);
 
-  beforeAll(async () => {
+  beforeAll(async done => {
     circomLibContract = await deployCircomLib();
     hasherContract = await deployHasher(circomLibContract.address);
+
+    done();
   });
 
-  beforeEach(async () => {
+  beforeEach(async done => {
     merkleTreeContract = await deployMerkleTree(
       depth,
       zeroValue,
       hasherContract.address
     );
+
+    done();
   });
 
-  it("Insert", async () => {
+  it("Insert", async done => {
     const leaf = multiHash([bigInt(1), bigInt(2)]);
 
     const m = createMerkleTree(depth, zeroValue);
@@ -35,9 +39,11 @@ describe("MerkleTree.sol", () => {
     const root = await merkleTreeContract.getRoot();
 
     expect(m.root.toString()).toEqual(root.toString());
+
+    done();
   });
 
-  it("Update", async () => {
+  it("Update", async done => {
     const leaves = [0, 0, 0, 0].map(() =>
       multiHash([genPrivateKey(), genPrivateKey()])
     );
@@ -65,5 +71,7 @@ describe("MerkleTree.sol", () => {
       const root = await merkleTreeContract.getRoot();
       expect(m.root.toString()).toEqual(root.toString());
     }
+
+    done();
   });
 });
