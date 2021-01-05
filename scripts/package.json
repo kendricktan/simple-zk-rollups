@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "circom": "^0.0.35",
     "ethers": "^4.0.43",
     "snarkjs": "^0.1.20",
