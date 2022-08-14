@@ -4,7 +4,7 @@
   "license": "MIT",
   "author": "Kendrick Tan <kendricktan0814@gmail.com>",
   "dependencies": {
-    "@openzeppelin/contracts": "^2.4.0",
+    "@openzeppelin/contracts": "^4.7.2",
     "@truffle/artifactor": "^4.0.44",
     "@types/mocha": "^5.2.7",
     "circom": "^0.0.35",
