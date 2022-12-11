@@ -41,7 +41,7 @@
     "circom": "0.0.35",
     "circomlib": "0.0.20",
     "ethers": "^4.0.43",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "ganache-cli": "^6.8.2",
     "log-timestamp": "^0.3.0",
     "pg": "^7.17.1",
